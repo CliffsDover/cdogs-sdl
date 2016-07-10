@@ -33,6 +33,9 @@
 #include <stdio.h>
 
 #define XGETOPT_NAMES
+#ifdef CDOGS_IOS
+#include <getopt.h>
+#else
 #include "XGetopt.h"
 
 /*
@@ -514,3 +517,5 @@ main(int argc, char **argv)
 }
 
 #endif
+
+#endif // CDOGS_IOS

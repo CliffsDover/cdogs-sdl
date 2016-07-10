@@ -53,6 +53,11 @@
  * specification), and some "black box" testing to determine error
  * conditions and messages not specified in the interface description.
  */
+#ifdef CDOGS_IOS
+
+#include <getopt.h>
+
+#else
 
 #if defined(_cplusplus) || defined(__cplusplus)
 extern "C" {
@@ -128,3 +133,5 @@ int getopt_long_only(int argc, char * argv[], const char *optstring,
 #endif
 
 #endif
+
+#endif // CDOGS_IOS
