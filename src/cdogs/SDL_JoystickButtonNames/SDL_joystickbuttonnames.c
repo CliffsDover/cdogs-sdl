@@ -42,7 +42,7 @@ typedef struct
 	SDL_Color axisColors[SDL_CONTROLLER_AXIS_MAX];
 } JoystickButtonNames;
 
-const char *err = NULL;
+const char *err2 = NULL;
 JoystickButtonNames *jbn = NULL;
 int nJBN = 0;
 JoystickButtonNames jDefault;
@@ -79,7 +79,7 @@ int SDLJBN_AddMappingsFromFile(const char *file)
 	SDL_RWops *rwops = SDL_RWFromFile(file, "r");
 	if (rwops == NULL)
 	{
-		err = "Cannot open file";
+		err2 = "Cannot open file";
 		ret = -1;
 		goto bail;
 	}
@@ -88,20 +88,20 @@ int SDLJBN_AddMappingsFromFile(const char *file)
 	const Sint64 fsize = rwops->size(rwops);
 	if (fsize == -1)
 	{
-		err = "Cannot find file size";
+		err2 = "Cannot find file size";
 		ret = -1;
 		goto bail;
 	}
 	s = SDL_malloc((size_t)fsize + 1);
 	if (s == NULL)
 	{
-		err = "Out of memory";
+		err2 = "Out of memory";
 		ret = -1;
 		goto bail;
 	}
 	if (SDL_RWread(rwops, s, (size_t)fsize, 1) == 0)
 	{
-		err = "Cannot read file";
+		err2 = "Cannot read file";
 		ret = -1;
 		goto bail;
 	}
@@ -354,13 +354,13 @@ int SDLJBN_GetButtonNameAndColor(SDL_Joystick *joystick,
 
 	if (joystick == NULL)
 	{
-		err = "joystick is NULL";
+		err2 = "joystick is NULL";
 		return -1;
 	}
 	if (button < SDL_CONTROLLER_BUTTON_A ||
 		button >= SDL_CONTROLLER_BUTTON_MAX)
 	{
-		err = "button is invalid";
+		err2 = "button is invalid";
 		return -1;
 	}
 	// Use defaults first
@@ -400,12 +400,12 @@ int SDLJBN_GetAxisNameAndColor(SDL_Joystick *joystick,
 
 	if (joystick == NULL)
 	{
-		err = "joystick is NULL";
+		err2 = "joystick is NULL";
 		return -1;
 	}
 	if (axis < SDL_CONTROLLER_AXIS_LEFTX || axis >= SDL_CONTROLLER_AXIS_MAX)
 	{
-		err = "axis is invalid";
+		err2 = "axis is invalid";
 		return -1;
 	}
 	// Use defaults first
@@ -448,5 +448,5 @@ static SDL_Color NewColor(Uint8 r, Uint8 g, Uint8 b)
 
 const char *SDLJBN_GetError(void)
 {
-	return err;
+	return err2;
 }
