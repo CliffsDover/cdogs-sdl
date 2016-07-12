@@ -394,7 +394,7 @@ void InputGetButtonNameColor(
 	switch (d)
 	{
 	case INPUT_DEVICE_KEYBOARD:
-	#ifdef __GCWZERO__
+#if defined( __GCWZERO__ ) || defined ( TARGET_OS_IPHONE )
 		if (color != NULL)
 		{
 			*color = colorBlue;

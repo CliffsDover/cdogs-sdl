@@ -398,7 +398,7 @@ static void CheckLANServers(menu_t *menu, void *data)
 }
 
 static menu_t *MenuCreateOptionsGraphics(const char *name, MenuSystem *ms);
-#if !defined(__ANDROID__) && !defined(__GCWZERO__)
+#if !defined(__ANDROID__) && !defined(__GCWZERO__) && !defined( TARGET_OS_IPHONE )
 static menu_t *MenuCreateOptionsControls(const char *name, MenuSystem *ms);
 #endif
 
@@ -415,7 +415,7 @@ static menu_t *MenuCreateOptions(const char *name, MenuSystem *ms)
 	MenuAddSubmenu(menu, MenuCreateConfigOptions(
 		"Interface...", "Interface Options:",
 		ConfigGet(&gConfig, "Interface"), ms, true));
-#if !defined(__ANDROID__) && !defined(__GCWZERO__)
+#if !defined(__ANDROID__) && !defined(__GCWZERO__) && !defined( TARGET_OS_IPHONE )
 	MenuAddSubmenu(menu, MenuCreateOptionsControls("Controls...", ms));
 #endif
 	MenuAddSubmenu(menu, MenuCreateConfigOptions(
@@ -460,7 +460,7 @@ menu_t *MenuCreateOptionsGraphics(const char *name, MenuSystem *ms)
 
 menu_t *MenuCreateKeys(const char *name, MenuSystem *ms);
 
-#if !defined(__ANDROID__) && !defined(__GCWZERO__)
+#if !defined(__ANDROID__) && !defined(__GCWZERO__) && !defined( TARGET_OS_IPHONE )
 menu_t *MenuCreateOptionsControls(const char *name, MenuSystem *ms)
 {
 	menu_t *menu = MenuCreateNormal(

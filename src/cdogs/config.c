@@ -585,7 +585,7 @@ Config ConfigDefault(void)
 		"Brightness", 0, BLIT_BRIGHTNESS_MIN, BLIT_BRIGHTNESS_MAX, 1,
 		NULL, NULL));
 	ConfigGroupAdd(&gfx, ConfigNewBool("Fullscreen",
-#ifdef __GCWZERO__
+#if defined( __GCWZERO__ ) || defined( TARGET_OS_IPHONE )
 		true
 #else
 		false
@@ -596,7 +596,7 @@ Config ConfigDefault(void)
 	ConfigGroupAdd(&gfx,
 		ConfigNewInt("ResolutionHeight", 240, 0, 0, 0, NULL, NULL));
 	ConfigGroupAdd(&gfx, ConfigNewInt("ScaleFactor",
-#ifdef __GCWZERO__
+#if defined( __GCWZERO__ ) || defined ( TARGET_OS_IPHONE )
 		1
 #else
 		2
@@ -615,7 +615,7 @@ Config ConfigDefault(void)
 	ConfigGroupAdd(&pk0, ConfigNewInt("right", SDL_SCANCODE_RIGHT, 0, 0, 0, NULL, NULL));
 	ConfigGroupAdd(&pk0, ConfigNewInt("up", SDL_SCANCODE_UP, 0, 0, 0, NULL, NULL));
 	ConfigGroupAdd(&pk0, ConfigNewInt("down", SDL_SCANCODE_DOWN, 0, 0, 0, NULL, NULL));
-#ifdef __GCWZERO__
+#if defined( __GCWZERO__ ) || defined ( TARGET_OS_IPHONE )
 	ConfigGroupAdd(&pk0, ConfigNewInt("button1", SDL_SCANCODE_LCTRL, 0, 0, 0, NULL, NULL));
 	ConfigGroupAdd(&pk0, ConfigNewInt("button2", SDL_SCANCODE_LALT, 0, 0, 0, NULL, NULL));
 #else

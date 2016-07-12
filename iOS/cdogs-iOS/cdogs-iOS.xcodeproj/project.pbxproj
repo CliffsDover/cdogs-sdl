@@ -995,30 +995,13 @@
 		A62C01261D3242F700542842 = {
 			isa = PBXGroup;
 			children = (
+				A6661DCE1D349B02005943B5 /* Libraries */,
 				A62724421D3339E2002D4213 /* BundleData */,
-				A62724401D32CE6B002D4213 /* QuartzCore.framework */,
-				A627243E1D32CE31002D4213 /* AVFoundation.framework */,
-				A627243C1D32CDFA002D4213 /* UIKit.framework */,
-				A627243A1D32CDE0002D4213 /* OpenGLES.framework */,
-				A62724381D32CC35002D4213 /* libc++.tbd */,
 				A62724331D32C939002D4213 /* SDL_joystickbuttonnames */,
 				A62724111D32C84D002D4213 /* yajl */,
 				A62723F71D32C817002D4213 /* c_hashmap */,
 				A62723ED1D32C7DE002D4213 /* json */,
 				A62723C11D32B393002D4213 /* enet */,
-				A62723AA1D32B2C5002D4213 /* CoreMotion.framework */,
-				A62723A81D32B2B6002D4213 /* GameController.framework */,
-				A62723A61D32B2A4002D4213 /* MobileCoreServices.framework */,
-				A62723A41D32B28F002D4213 /* AudioToolbox.framework */,
-				A62723A01D32B229002D4213 /* CoreFoundation.framework */,
-				A62723A11D32B229002D4213 /* Foundation.framework */,
-				A62723981D32B1FF002D4213 /* CoreGraphics.framework */,
-				A62723991D32B1FF002D4213 /* CoreImage.framework */,
-				A627239A1D32B1FF002D4213 /* CoreText.framework */,
-				A627239B1D32B1FF002D4213 /* ImageIO.framework */,
-				A62720E51D327064002D4213 /* SDL.xcodeproj */,
-				A62723891D32B173002D4213 /* SDL_mixer.xcodeproj */,
-				A62723791D32B083002D4213 /* SDL_image.xcodeproj */,
 				A62722081D32ADE1002D4213 /* cdogs */,
 				A62721141D329272002D4213 /* cdogs-sdl */,
 				A62C01311D3242F700542842 /* cdogs-iOS */,
@@ -1051,6 +1034,31 @@
 			children = (
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		A6661DCE1D349B02005943B5 /* Libraries */ = {
+			isa = PBXGroup;
+			children = (
+				A62724401D32CE6B002D4213 /* QuartzCore.framework */,
+				A627243E1D32CE31002D4213 /* AVFoundation.framework */,
+				A627243C1D32CDFA002D4213 /* UIKit.framework */,
+				A627243A1D32CDE0002D4213 /* OpenGLES.framework */,
+				A62723AA1D32B2C5002D4213 /* CoreMotion.framework */,
+				A62723A81D32B2B6002D4213 /* GameController.framework */,
+				A62723A61D32B2A4002D4213 /* MobileCoreServices.framework */,
+				A62723A41D32B28F002D4213 /* AudioToolbox.framework */,
+				A62723A01D32B229002D4213 /* CoreFoundation.framework */,
+				A62723A11D32B229002D4213 /* Foundation.framework */,
+				A62723981D32B1FF002D4213 /* CoreGraphics.framework */,
+				A62723991D32B1FF002D4213 /* CoreImage.framework */,
+				A627239A1D32B1FF002D4213 /* CoreText.framework */,
+				A627239B1D32B1FF002D4213 /* ImageIO.framework */,
+				A62720E51D327064002D4213 /* SDL.xcodeproj */,
+				A62723891D32B173002D4213 /* SDL_mixer.xcodeproj */,
+				A62723791D32B083002D4213 /* SDL_image.xcodeproj */,
+				A62724381D32CC35002D4213 /* libc++.tbd */,
+			);
+			name = Libraries;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
