@@ -320,7 +320,11 @@ char *CDogsGetCWD(char *buf)
 	// This gives us the executable path; find the dirname
 	*strrchr(cwd, '/') = '\0';
 	// The executable is under *.app/Content/MacOS, so cd up thrice
+#ifdef CDOGS_IOS
+    sprintf(buf, "%s", cwd);
+#else
 	sprintf(buf, "%s/../../..", cwd);
+#endif // CDOGS_IOS
 	return buf;
 #else
 	return getcwd(buf, CDOGS_PATH_MAX);

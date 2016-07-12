@@ -161,6 +161,10 @@
 		A627243D1D32CDFA002D4213 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A627243C1D32CDFA002D4213 /* UIKit.framework */; };
 		A627243F1D32CE31002D4213 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A627243E1D32CE31002D4213 /* AVFoundation.framework */; };
 		A62724411D32CE6B002D4213 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A62724401D32CE6B002D4213 /* QuartzCore.framework */; };
+		A627286D1D336458002D4213 /* data in Resources */ = {isa = PBXBuildFile; fileRef = A627286C1D336458002D4213 /* data */; };
+		A62728731D340BF0002D4213 /* graphics in Resources */ = {isa = PBXBuildFile; fileRef = A62728721D340BF0002D4213 /* graphics */; };
+		A62728761D340CDD002D4213 /* music in Resources */ = {isa = PBXBuildFile; fileRef = A62728741D340CDD002D4213 /* music */; };
+		A62728771D340CDD002D4213 /* sounds in Resources */ = {isa = PBXBuildFile; fileRef = A62728751D340CDD002D4213 /* sounds */; };
 		A62C013D1D3242F800542842 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A62C013B1D3242F800542842 /* Main.storyboard */; };
 		A62C013F1D3242F800542842 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A62C013E1D3242F800542842 /* Assets.xcassets */; };
 		A62C01421D3242F800542842 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A62C01401D3242F800542842 /* LaunchScreen.storyboard */; };
@@ -477,6 +481,10 @@
 		A627243C1D32CDFA002D4213 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		A627243E1D32CE31002D4213 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		A62724401D32CE6B002D4213 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		A627286C1D336458002D4213 /* data */ = {isa = PBXFileReference; lastKnownFileType = folder; name = data; path = ../../data; sourceTree = "<group>"; };
+		A62728721D340BF0002D4213 /* graphics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = graphics; path = ../../graphics; sourceTree = "<group>"; };
+		A62728741D340CDD002D4213 /* music */ = {isa = PBXFileReference; lastKnownFileType = folder; name = music; path = ../../music; sourceTree = "<group>"; };
+		A62728751D340CDD002D4213 /* sounds */ = {isa = PBXFileReference; lastKnownFileType = folder; name = sounds; path = ../../sounds; sourceTree = "<group>"; };
 		A62C012F1D3242F700542842 /* cdogs-iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "cdogs-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A62C013C1D3242F800542842 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		A62C013E1D3242F800542842 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -973,9 +981,21 @@
 			path = ../..;
 			sourceTree = "<group>";
 		};
+		A62724421D3339E2002D4213 /* BundleData */ = {
+			isa = PBXGroup;
+			children = (
+				A62728741D340CDD002D4213 /* music */,
+				A62728751D340CDD002D4213 /* sounds */,
+				A62728721D340BF0002D4213 /* graphics */,
+				A627286C1D336458002D4213 /* data */,
+			);
+			name = BundleData;
+			sourceTree = "<group>";
+		};
 		A62C01261D3242F700542842 = {
 			isa = PBXGroup;
 			children = (
+				A62724421D3339E2002D4213 /* BundleData */,
 				A62724401D32CE6B002D4213 /* QuartzCore.framework */,
 				A627243E1D32CE31002D4213 /* AVFoundation.framework */,
 				A627243C1D32CDFA002D4213 /* UIKit.framework */,
@@ -1128,10 +1148,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A62728761D340CDD002D4213 /* music in Resources */,
 				A62723CB1D32B393002D4213 /* CMakeLists.txt in Resources */,
+				A62728771D340CDD002D4213 /* sounds in Resources */,
 				A62C01421D3242F800542842 /* LaunchScreen.storyboard in Resources */,
 				A62723F91D32C817002D4213 /* CMakeLists.txt in Resources */,
+				A62728731D340BF0002D4213 /* graphics in Resources */,
 				A62C013F1D3242F800542842 /* Assets.xcassets in Resources */,
+				A627286D1D336458002D4213 /* data in Resources */,
 				A62724351D32C939002D4213 /* CMakeLists.txt in Resources */,
 				A627241B1D32C84E002D4213 /* CMakeLists.txt in Resources */,
 				A62C013D1D3242F800542842 /* Main.storyboard in Resources */,
