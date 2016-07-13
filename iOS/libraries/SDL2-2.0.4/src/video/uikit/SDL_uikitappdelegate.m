@@ -368,7 +368,14 @@ SDL_LoadLaunchImageNamed(NSString *name, int screenh)
 
     SDL_SetMainReady();
     [self performSelector:@selector(postFinishLaunch) withObject:nil afterDelay:0.0];
+    
+    NSUserDefaults* userDefaults = [NSUserDefaults standardUserDefaults];
+    NSDictionary* defaultValues = @{@"DPadScale" : @1.0,
+                                    @"DPadPosX" : @-1.0,
+                                    @"DPadPosY" : @-1.0};
+    [userDefaults registerDefaults:defaultValues];
 
+    
     return YES;
 }
 
@@ -455,6 +462,16 @@ SDL_LoadLaunchImageNamed(NSString *name, int screenh)
     } else {
         SDL_SendDropFile([url.absoluteString UTF8String]);
     }
+    return YES;
+}
+
+-(BOOL)application:(UIApplication *)application shouldRestoreApplicationState:(NSCoder *)coder
+{
+    return YES;
+}
+
+-(BOOL)application:(UIApplication *)application shouldSaveApplicationState:(NSCoder *)coder
+{
     return YES;
 }
 

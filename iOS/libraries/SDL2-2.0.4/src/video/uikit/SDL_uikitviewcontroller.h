@@ -1,6 +1,6 @@
 /*
  Simple DirectMedia Layer
- Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+ Copyright (C) 1997-2015 Sam Lantinga <slouken@libsdl.org>
 
  This software is provided 'as-is', without any express or implied
  warranty.  In no event will the authors be held liable for any damages
@@ -20,18 +20,25 @@
  */
 
 #import <UIKit/UIKit.h>
+#import <ReplayKit/ReplayKit.h>
 
 #include "../SDL_sysvideo.h"
 
 #include "SDL_touch.h"
+#import "JSDPad.h"
+#import "JSButton.h"
+
+
+
 
 #if SDL_IPHONE_KEYBOARD
-@interface SDL_uikitviewcontroller : UIViewController <UITextFieldDelegate>
+@interface SDL_uikitviewcontroller : UIViewController <UITextFieldDelegate,JSDPadDelegate,JSButtonDelegate,UIGestureRecognizerDelegate>
 #else
 @interface SDL_uikitviewcontroller : UIViewController
 #endif
 
 @property (nonatomic, assign) SDL_Window *window;
+@property (nonatomic, assign) BOOL lockKeyboard;
 
 - (instancetype)initWithSDLWindow:(SDL_Window *)_window;
 
@@ -47,7 +54,9 @@
 - (void)loadView;
 - (void)viewDidLayoutSubviews;
 - (NSUInteger)supportedInterfaceOrientations;
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)orient;
 - (BOOL)prefersStatusBarHidden;
+- (UIStatusBarStyle)preferredStatusBarStyle;
 
 #if SDL_IPHONE_KEYBOARD
 - (void)showKeyboard;

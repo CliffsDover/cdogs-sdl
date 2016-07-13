@@ -370,7 +370,8 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-
+    ConfigGet(&gConfig, "Graphics.ResolutionWidth")->u.Int.Value = 960;
+    ConfigGet(&gConfig, "Graphics.ResolutionHeight")->u.Int.Value = 540;
 	debug(D_NORMAL, "Initialising SDL...\n");
 	const int sdlFlags =
 		SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_HAPTIC;
