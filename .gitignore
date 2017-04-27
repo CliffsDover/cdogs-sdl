@@ -31,7 +31,7 @@ install_manifest_Runtime.txt
 *.rpm
 
 # Generated files
-src/cdogs/sys_config.h
+#src/cdogs/sys_config.h
 build/linux/cdogs-sdl
 cdogs-sdl_*/
 install_manifest.txt
