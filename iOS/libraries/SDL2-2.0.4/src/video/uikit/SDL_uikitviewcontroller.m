@@ -780,6 +780,12 @@
         SDL_SendKeyboardKey( SDL_PRESSED, SDL_SCANCODE_RSHIFT );
         //SDL_SendKeyboardKey( SDL_RELEASED, SDL_SCANCODE_ESCAPE );
     }
+    else if( [button isEqual:optionsButton] )
+    {
+        //[self didTapOptionsButton];
+        SDL_SendKeyboardKey( SDL_PRESSED, SDL_SCANCODE_ESCAPE );
+        
+    }
 }
 
 - (void)buttonReleased:(JSButton *)button
@@ -793,6 +799,12 @@
     {
         //SDL_SendKeyboardKey( SDL_PRESSED, SDL_SCANCODE_ESCAPE );
         SDL_SendKeyboardKey( SDL_RELEASED, SDL_SCANCODE_ESCAPE );
+    }
+    else if( [button isEqual:optionsButton] )
+    {
+        //[self didTapOptionsButton];
+        SDL_SendKeyboardKey( SDL_RELEASED, SDL_SCANCODE_ESCAPE );
+        
     }
 //    else if ([button isEqual:keyboardButton])
 //    {
@@ -850,10 +862,7 @@
 //        SDL_SendKeyboardKey( SDL_RELEASED, SDL_SCANCODE_TAB );
 //    }
     
-    if( [button isEqual:optionsButton] )
-    {
-        [self didTapOptionsButton];
-    }
+    
     
     
     //[longPressGesture setEnabled:YES];
