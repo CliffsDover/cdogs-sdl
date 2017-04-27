@@ -22,7 +22,7 @@
     This file incorporates work covered by the following copyright and
     permission notice:
 
-    Copyright (c) 2013-2016, Cong Xu
+    Copyright (c) 2013-2017, Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -156,12 +156,23 @@ void RealPath(const char *src, char *dest)
 				*c = '/';
 			}
 		}
-		// Then, copy the path one level at a time, ignoring '//'s, '.'s and
-		// resolving '..'s to the parent level
+
+		// Then, add on the CWD if the path is not absolute
 		char resolveBuf[CDOGS_PATH_MAX];
-		char *cOut = resolveBuf;
+		resolveBuf[0] = '\0';
+		if (!IsAbsolutePath(srcBuf))
+		{
+			CDogsGetCWD(resolveBuf);
+			strcat(resolveBuf, "/");
+		}
+		// Add the path
+		strcat(resolveBuf, srcBuf);
+
+		// Finally, resolve the path one level at a time, ignoring '//'s, '.'s
+		// and resolving '..'s to the parent level
+		char *cOut = dest;
 		char cLast = '\0';
-		for (const char *c = srcBuf; *c != '\0'; c++)
+		for (const char *c = resolveBuf; *c != '\0'; c++)
 		{
 			if (*c == '.' && (cLast == '.' || cLast == '/'))
 			{
@@ -169,11 +180,11 @@ void RealPath(const char *src, char *dest)
 				{
 					// '..' parent dir
 					// Rewind the out ptr to the last path separator
-					if (cOut > resolveBuf + 1)
+					if (cOut > dest + 1)
 					{
 						// Skip past the last slash
 						cOut -= 2;
-						while (*cOut != '/' && cOut > resolveBuf)
+						while (*cOut != '/' && cOut > dest)
 						{
 							cOut--;
 						}
@@ -202,18 +213,6 @@ void RealPath(const char *src, char *dest)
 		}
 		// Write terminating char
 		*cOut = '\0';
-
-		// Finally, add on the CWD if the path is not absolute
-		if (IsAbsolutePath(resolveBuf))
-		{
-			strcpy(dest, resolveBuf);
-		}
-		else
-		{
-			CDogsGetCWD(dest);
-			strcat(dest, "/");
-			strcat(dest, resolveBuf);
-		}
 		res = dest;
 	}
 	else
@@ -314,17 +313,18 @@ static void TrimSlashes(char *s)
 char *CDogsGetCWD(char *buf)
 {
 #ifdef __APPLE__
-	char cwd[CDOGS_PATH_MAX];
-	uint32_t size = sizeof cwd;
-	_NSGetExecutablePath(cwd, &size);
+	uint32_t size = CDOGS_PATH_MAX;
+	if (_NSGetExecutablePath(buf, &size))
+	{
+		return NULL;
+	}
 	// This gives us the executable path; find the dirname
-	*strrchr(cwd, '/') = '\0';
-	// The executable is under *.app/Content/MacOS, so cd up thrice
-#ifdef CDOGS_IOS
-    sprintf(buf, "%s", cwd);
-#else
-	sprintf(buf, "%s/../../..", cwd);
-#endif // CDOGS_IOS
+	*strrchr(buf, '/') = '\0';
+//#ifdef CDOGS_IOS
+//    sprintf(buf, "%s", cwd);
+//#else
+//    sprintf(buf, "%s/../../..", cwd);
+//#endif // CDOGS_IOS
 	return buf;
 #else
 	return getcwd(buf, CDOGS_PATH_MAX);
@@ -466,4 +466,31 @@ void CamelToTitle(char *buf, const char *src)
 		*buf++ = *src++;
 	}
 	*buf = '\0';
+}
+// From answer by plinth
+// http://stackoverflow.com/a/744822/2038264
+// License: http://creativecommons.org/licenses/by-sa/3.0/
+// Author profile: http://stackoverflow.com/users/20481/plinth
+bool StrEndsWith(const char *str, const char *suffix)
+{
+	if (str == NULL || suffix == NULL)
+	{
+		return false;
+	}
+	const size_t lenStr = strlen(str);
+	const size_t lenSuffix = strlen(suffix);
+	if (lenSuffix > lenStr)
+	{
+		return false;
+	}
+	return strncmp(str + lenStr - lenSuffix, suffix, lenSuffix) == 0;
+}
+
+BodyPart StrBodyPart(const char *s)
+{
+	S2T(BODY_PART_HEAD, "head");
+	S2T(BODY_PART_BODY, "body");
+	S2T(BODY_PART_LEGS, "legs");
+	S2T(BODY_PART_GUN, "gun");
+	return BODY_PART_HEAD;
 }

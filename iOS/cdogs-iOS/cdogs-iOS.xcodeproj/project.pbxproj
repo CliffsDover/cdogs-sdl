@@ -35,7 +35,6 @@
 		A627228E1D32AF3E002D4213 /* algorithms.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722781D32AF3E002D4213 /* algorithms.c */; };
 		A627228F1D32AF3E002D4213 /* ammo.c in Sources */ = {isa = PBXBuildFile; fileRef = A627227A1D32AF3E002D4213 /* ammo.c */; };
 		A62722901D32AF3E002D4213 /* animation.c in Sources */ = {isa = PBXBuildFile; fileRef = A627227C1D32AF3E002D4213 /* animation.c */; };
-		A62722911D32AF3E002D4213 /* AStar.c in Sources */ = {isa = PBXBuildFile; fileRef = A627227E1D32AF3E002D4213 /* AStar.c */; };
 		A62722921D32AF3E002D4213 /* automap.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722801D32AF3E002D4213 /* automap.c */; };
 		A62722931D32AF3E002D4213 /* blit.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722821D32AF3E002D4213 /* blit.c */; };
 		A62722941D32AF3E002D4213 /* bullet_class.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722841D32AF3E002D4213 /* bullet_class.c */; };
@@ -45,7 +44,6 @@
 		A627229E1D32AF6E002D4213 /* campaigns.c in Sources */ = {isa = PBXBuildFile; fileRef = A627229A1D32AF6E002D4213 /* campaigns.c */; };
 		A62722A31D32AF78002D4213 /* character_class.c in Sources */ = {isa = PBXBuildFile; fileRef = A627229F1D32AF78002D4213 /* character_class.c */; };
 		A62722A41D32AF78002D4213 /* character.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722A11D32AF78002D4213 /* character.c */; };
-		A62722B41D32AF83002D4213 /* collision.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722A51D32AF83002D4213 /* collision.c */; };
 		A62722B51D32AF83002D4213 /* color.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722A71D32AF83002D4213 /* color.c */; };
 		A62722B61D32AF83002D4213 /* config_apply.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722A91D32AF83002D4213 /* config_apply.c */; };
 		A62722B71D32AF83002D4213 /* config_io.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722AA1D32AF83002D4213 /* config_io.c */; };
@@ -56,9 +54,6 @@
 		A62722BE1D32AF8D002D4213 /* damage.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722BC1D32AF8D002D4213 /* damage.c */; };
 		A62722CB1D32AF96002D4213 /* defs.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722BF1D32AF96002D4213 /* defs.c */; };
 		A62722CC1D32AF96002D4213 /* door.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722C11D32AF96002D4213 /* door.c */; };
-		A62722CD1D32AF96002D4213 /* draw_buffer.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722C31D32AF96002D4213 /* draw_buffer.c */; };
-		A62722CE1D32AF96002D4213 /* draw.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722C51D32AF96002D4213 /* draw.c */; };
-		A62722CF1D32AF96002D4213 /* drawtools.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722C71D32AF96002D4213 /* drawtools.c */; };
 		A62722D01D32AF96002D4213 /* emitter.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722C91D32AF96002D4213 /* emitter.c */; };
 		A62722EB1D32AFA2002D4213 /* events.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722D11D32AFA2002D4213 /* events.c */; };
 		A62722EC1D32AFA2002D4213 /* files.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722D31D32AFA2002D4213 /* files.c */; };
@@ -72,7 +67,6 @@
 		A62722F41D32AFA2002D4213 /* grafx.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722E31D32AFA2002D4213 /* grafx.c */; };
 		A62722F51D32AFA2002D4213 /* handle_game_events.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722E51D32AFA2002D4213 /* handle_game_events.c */; };
 		A62722F61D32AFA2002D4213 /* hiscores.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722E71D32AFA2002D4213 /* hiscores.c */; };
-		A62722F71D32AFA2002D4213 /* hud.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722E91D32AFA2002D4213 /* hud.c */; };
 		A62722FE1D32AFB5002D4213 /* joystick.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722F81D32AFB5002D4213 /* joystick.c */; };
 		A62722FF1D32AFB5002D4213 /* json_utils.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722FA1D32AFB5002D4213 /* json_utils.c */; };
 		A62723001D32AFB5002D4213 /* keyboard.c in Sources */ = {isa = PBXBuildFile; fileRef = A62722FC1D32AFB5002D4213 /* keyboard.c */; };
@@ -98,7 +92,6 @@
 		A62723521D32AFCF002D4213 /* palette.c in Sources */ = {isa = PBXBuildFile; fileRef = A62723271D32AFCE002D4213 /* palette.c */; };
 		A62723531D32AFCF002D4213 /* particle.c in Sources */ = {isa = PBXBuildFile; fileRef = A62723291D32AFCE002D4213 /* particle.c */; };
 		A62723541D32AFCF002D4213 /* path_cache.c in Sources */ = {isa = PBXBuildFile; fileRef = A627232B1D32AFCE002D4213 /* path_cache.c */; };
-		A62723551D32AFCF002D4213 /* pic_file.c in Sources */ = {isa = PBXBuildFile; fileRef = A627232D1D32AFCE002D4213 /* pic_file.c */; };
 		A62723561D32AFCF002D4213 /* pic_manager.c in Sources */ = {isa = PBXBuildFile; fileRef = A627232F1D32AFCE002D4213 /* pic_manager.c */; };
 		A62723571D32AFCF002D4213 /* pic.c in Sources */ = {isa = PBXBuildFile; fileRef = A62723311D32AFCE002D4213 /* pic.c */; };
 		A62723581D32AFCF002D4213 /* pickup_class.c in Sources */ = {isa = PBXBuildFile; fileRef = A62723331D32AFCF002D4213 /* pickup_class.c */; };
@@ -235,6 +228,21 @@
 		A6661E671D34C647005943B5 /* options_silver_on@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = A6661E571D34C647005943B5 /* options_silver_on@2x~ipad.png */; };
 		A6661E681D34C647005943B5 /* options_silver_on@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = A6661E581D34C647005943B5 /* options_silver_on@3x.png */; };
 		A6661E691D34C647005943B5 /* options_silver_on~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = A6661E591D34C647005943B5 /* options_silver_on~ipad.png */; };
+		A6ADF8DF1EB18DD9000782F4 /* fps.c in Sources */ = {isa = PBXBuildFile; fileRef = A6ADF8DB1EB18DD9000782F4 /* fps.c */; };
+		A6ADF8E01EB18DD9000782F4 /* hud_num_popup.c in Sources */ = {isa = PBXBuildFile; fileRef = A6ADF8DC1EB18DD9000782F4 /* hud_num_popup.c */; };
+		A6ADF8E11EB18DD9000782F4 /* hud.c in Sources */ = {isa = PBXBuildFile; fileRef = A6ADF8DD1EB18DD9000782F4 /* hud.c */; };
+		A6ADF8E21EB18DD9000782F4 /* wall_clock.c in Sources */ = {isa = PBXBuildFile; fileRef = A6ADF8DE1EB18DD9000782F4 /* wall_clock.c */; };
+		A6ADF8E41EB18E5C000782F4 /* actor_fire.c in Sources */ = {isa = PBXBuildFile; fileRef = A6ADF8E31EB18E5C000782F4 /* actor_fire.c */; };
+		A6ADF8E61EB18E7C000782F4 /* AStar.c in Sources */ = {isa = PBXBuildFile; fileRef = A6ADF8E51EB18E7C000782F4 /* AStar.c */; };
+		A6ADF8EA1EB18F31000782F4 /* collision.c in Sources */ = {isa = PBXBuildFile; fileRef = A6ADF8E81EB18F31000782F4 /* collision.c */; };
+		A6ADF8EB1EB18F31000782F4 /* minkowski_hex.c in Sources */ = {isa = PBXBuildFile; fileRef = A6ADF8E91EB18F31000782F4 /* minkowski_hex.c */; };
+		A6ADF8F21EB18F7B000782F4 /* char_sprites.c in Sources */ = {isa = PBXBuildFile; fileRef = A6ADF8EC1EB18F7B000782F4 /* char_sprites.c */; };
+		A6ADF8F31EB18F7B000782F4 /* draw_actor.c in Sources */ = {isa = PBXBuildFile; fileRef = A6ADF8ED1EB18F7B000782F4 /* draw_actor.c */; };
+		A6ADF8F41EB18F7B000782F4 /* draw_buffer.c in Sources */ = {isa = PBXBuildFile; fileRef = A6ADF8EE1EB18F7B000782F4 /* draw_buffer.c */; };
+		A6ADF8F51EB18F7B000782F4 /* draw_highlight.c in Sources */ = {isa = PBXBuildFile; fileRef = A6ADF8EF1EB18F7B000782F4 /* draw_highlight.c */; };
+		A6ADF8F61EB18F7B000782F4 /* draw.c in Sources */ = {isa = PBXBuildFile; fileRef = A6ADF8F01EB18F7B000782F4 /* draw.c */; };
+		A6ADF8F71EB18F7B000782F4 /* drawtools.c in Sources */ = {isa = PBXBuildFile; fileRef = A6ADF8F11EB18F7B000782F4 /* drawtools.c */; };
+		A6ADF8F91EB18FC6000782F4 /* command_line.c in Sources */ = {isa = PBXBuildFile; fileRef = A6ADF8F81EB18FC6000782F4 /* command_line.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -322,7 +330,6 @@
 		A62721B41D32ADE1002D4213 /* campaigns.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = campaigns.h; path = src/cdogs/campaigns.h; sourceTree = "<group>"; };
 		A62721B51D32ADE1002D4213 /* character.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = character.h; path = src/cdogs/character.h; sourceTree = "<group>"; };
 		A62721B61D32ADE1002D4213 /* character_class.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = character_class.h; path = src/cdogs/character_class.h; sourceTree = "<group>"; };
-		A62721B71D32ADE1002D4213 /* collision.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = collision.h; path = src/cdogs/collision.h; sourceTree = "<group>"; };
 		A62721B81D32ADE1002D4213 /* color.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = color.h; path = src/cdogs/color.h; sourceTree = "<group>"; };
 		A62721B91D32ADE1002D4213 /* config.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = config.h; path = src/cdogs/config.h; sourceTree = "<group>"; };
 		A62721BA1D32ADE1002D4213 /* config_io.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = config_io.h; path = src/cdogs/config_io.h; sourceTree = "<group>"; };
@@ -332,9 +339,6 @@
 		A62721BE1D32ADE1002D4213 /* damage.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = damage.h; path = src/cdogs/damage.h; sourceTree = "<group>"; };
 		A62721BF1D32ADE1002D4213 /* defs.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = defs.h; path = src/cdogs/defs.h; sourceTree = "<group>"; };
 		A62721C01D32ADE1002D4213 /* door.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = door.h; path = src/cdogs/door.h; sourceTree = "<group>"; };
-		A62721C11D32ADE1002D4213 /* draw.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = draw.h; path = src/cdogs/draw.h; sourceTree = "<group>"; };
-		A62721C21D32ADE1002D4213 /* draw_buffer.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = draw_buffer.h; path = src/cdogs/draw_buffer.h; sourceTree = "<group>"; };
-		A62721C31D32ADE1002D4213 /* drawtools.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = drawtools.h; path = src/cdogs/drawtools.h; sourceTree = "<group>"; };
 		A62721C41D32ADE1002D4213 /* emitter.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = emitter.h; path = src/cdogs/emitter.h; sourceTree = "<group>"; };
 		A62721C51D32ADE1002D4213 /* events.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = events.h; path = src/cdogs/events.h; sourceTree = "<group>"; };
 		A62721C61D32ADE1002D4213 /* files.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = files.h; path = src/cdogs/files.h; sourceTree = "<group>"; };
@@ -348,7 +352,6 @@
 		A62721CE1D32ADE1002D4213 /* grafx_bg.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = grafx_bg.h; path = src/cdogs/grafx_bg.h; sourceTree = "<group>"; };
 		A62721CF1D32ADE1002D4213 /* handle_game_events.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = handle_game_events.h; path = src/cdogs/handle_game_events.h; sourceTree = "<group>"; };
 		A62721D01D32ADE1002D4213 /* hiscores.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = hiscores.h; path = src/cdogs/hiscores.h; sourceTree = "<group>"; };
-		A62721D11D32ADE1002D4213 /* hud.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = hud.h; path = src/cdogs/hud.h; sourceTree = "<group>"; };
 		A62721D21D32ADE1002D4213 /* joystick.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = joystick.h; path = src/cdogs/joystick.h; sourceTree = "<group>"; };
 		A62721D31D32ADE1002D4213 /* json_utils.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = json_utils.h; path = src/cdogs/json_utils.h; sourceTree = "<group>"; };
 		A62721D41D32ADE1002D4213 /* keyboard.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = keyboard.h; path = src/cdogs/keyboard.h; sourceTree = "<group>"; };
@@ -375,7 +378,6 @@
 		A62721E91D32ADE1002D4213 /* particle.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = particle.h; path = src/cdogs/particle.h; sourceTree = "<group>"; };
 		A62721EA1D32ADE1002D4213 /* path_cache.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = path_cache.h; path = src/cdogs/path_cache.h; sourceTree = "<group>"; };
 		A62721EB1D32ADE1002D4213 /* pic.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = pic.h; path = src/cdogs/pic.h; sourceTree = "<group>"; };
-		A62721EC1D32ADE1002D4213 /* pic_file.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = pic_file.h; path = src/cdogs/pic_file.h; sourceTree = "<group>"; };
 		A62721ED1D32ADE1002D4213 /* pic_manager.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = pic_manager.h; path = src/cdogs/pic_manager.h; sourceTree = "<group>"; };
 		A62721EE1D32ADE1002D4213 /* pickup.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = pickup.h; path = src/cdogs/pickup.h; sourceTree = "<group>"; };
 		A62721EF1D32ADE1002D4213 /* pickup_class.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = pickup_class.h; path = src/cdogs/pickup_class.h; sourceTree = "<group>"; };
@@ -408,7 +410,6 @@
 		A62722781D32AF3E002D4213 /* algorithms.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = algorithms.c; path = src/cdogs/algorithms.c; sourceTree = "<group>"; };
 		A627227A1D32AF3E002D4213 /* ammo.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ammo.c; path = src/cdogs/ammo.c; sourceTree = "<group>"; };
 		A627227C1D32AF3E002D4213 /* animation.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = animation.c; path = src/cdogs/animation.c; sourceTree = "<group>"; };
-		A627227E1D32AF3E002D4213 /* AStar.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = AStar.c; path = src/cdogs/AStar.c; sourceTree = "<group>"; };
 		A62722801D32AF3E002D4213 /* automap.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = automap.c; path = src/cdogs/automap.c; sourceTree = "<group>"; };
 		A62722821D32AF3E002D4213 /* blit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = blit.c; path = src/cdogs/blit.c; sourceTree = "<group>"; };
 		A62722841D32AF3E002D4213 /* bullet_class.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = bullet_class.c; path = src/cdogs/bullet_class.c; sourceTree = "<group>"; };
@@ -418,7 +419,6 @@
 		A627229A1D32AF6E002D4213 /* campaigns.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = campaigns.c; path = src/cdogs/campaigns.c; sourceTree = "<group>"; };
 		A627229F1D32AF78002D4213 /* character_class.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = character_class.c; path = src/cdogs/character_class.c; sourceTree = "<group>"; };
 		A62722A11D32AF78002D4213 /* character.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = character.c; path = src/cdogs/character.c; sourceTree = "<group>"; };
-		A62722A51D32AF83002D4213 /* collision.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = collision.c; path = src/cdogs/collision.c; sourceTree = "<group>"; };
 		A62722A71D32AF83002D4213 /* color.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = color.c; path = src/cdogs/color.c; sourceTree = "<group>"; };
 		A62722A91D32AF83002D4213 /* config_apply.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = config_apply.c; path = src/cdogs/config_apply.c; sourceTree = "<group>"; };
 		A62722AA1D32AF83002D4213 /* config_io.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = config_io.c; path = src/cdogs/config_io.c; sourceTree = "<group>"; };
@@ -429,9 +429,6 @@
 		A62722BC1D32AF8D002D4213 /* damage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = damage.c; path = src/cdogs/damage.c; sourceTree = "<group>"; };
 		A62722BF1D32AF96002D4213 /* defs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = defs.c; path = src/cdogs/defs.c; sourceTree = "<group>"; };
 		A62722C11D32AF96002D4213 /* door.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = door.c; path = src/cdogs/door.c; sourceTree = "<group>"; };
-		A62722C31D32AF96002D4213 /* draw_buffer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = draw_buffer.c; path = src/cdogs/draw_buffer.c; sourceTree = "<group>"; };
-		A62722C51D32AF96002D4213 /* draw.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = draw.c; path = src/cdogs/draw.c; sourceTree = "<group>"; };
-		A62722C71D32AF96002D4213 /* drawtools.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = drawtools.c; path = src/cdogs/drawtools.c; sourceTree = "<group>"; };
 		A62722C91D32AF96002D4213 /* emitter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = emitter.c; path = src/cdogs/emitter.c; sourceTree = "<group>"; };
 		A62722D11D32AFA2002D4213 /* events.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = events.c; path = src/cdogs/events.c; sourceTree = "<group>"; };
 		A62722D31D32AFA2002D4213 /* files.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = files.c; path = src/cdogs/files.c; sourceTree = "<group>"; };
@@ -445,7 +442,6 @@
 		A62722E31D32AFA2002D4213 /* grafx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = grafx.c; path = src/cdogs/grafx.c; sourceTree = "<group>"; };
 		A62722E51D32AFA2002D4213 /* handle_game_events.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = handle_game_events.c; path = src/cdogs/handle_game_events.c; sourceTree = "<group>"; };
 		A62722E71D32AFA2002D4213 /* hiscores.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hiscores.c; path = src/cdogs/hiscores.c; sourceTree = "<group>"; };
-		A62722E91D32AFA2002D4213 /* hud.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hud.c; path = src/cdogs/hud.c; sourceTree = "<group>"; };
 		A62722F81D32AFB5002D4213 /* joystick.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = joystick.c; path = src/cdogs/joystick.c; sourceTree = "<group>"; };
 		A62722FA1D32AFB5002D4213 /* json_utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = json_utils.c; path = src/cdogs/json_utils.c; sourceTree = "<group>"; };
 		A62722FC1D32AFB5002D4213 /* keyboard.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = keyboard.c; path = src/cdogs/keyboard.c; sourceTree = "<group>"; };
@@ -471,7 +467,6 @@
 		A62723271D32AFCE002D4213 /* palette.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = palette.c; path = src/cdogs/palette.c; sourceTree = "<group>"; };
 		A62723291D32AFCE002D4213 /* particle.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = particle.c; path = src/cdogs/particle.c; sourceTree = "<group>"; };
 		A627232B1D32AFCE002D4213 /* path_cache.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = path_cache.c; path = src/cdogs/path_cache.c; sourceTree = "<group>"; };
-		A627232D1D32AFCE002D4213 /* pic_file.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pic_file.c; path = src/cdogs/pic_file.c; sourceTree = "<group>"; };
 		A627232F1D32AFCE002D4213 /* pic_manager.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pic_manager.c; path = src/cdogs/pic_manager.c; sourceTree = "<group>"; };
 		A62723311D32AFCE002D4213 /* pic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pic.c; path = src/cdogs/pic.c; sourceTree = "<group>"; };
 		A62723331D32AFCF002D4213 /* pickup_class.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pickup_class.c; path = src/cdogs/pickup_class.c; sourceTree = "<group>"; };
@@ -631,6 +626,22 @@
 		A6661E571D34C647005943B5 /* options_silver_on@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "options_silver_on@2x~ipad.png"; path = "../resources/options_silver_on@2x~ipad.png"; sourceTree = "<group>"; };
 		A6661E581D34C647005943B5 /* options_silver_on@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "options_silver_on@3x.png"; path = "../resources/options_silver_on@3x.png"; sourceTree = "<group>"; };
 		A6661E591D34C647005943B5 /* options_silver_on~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "options_silver_on~ipad.png"; path = "../resources/options_silver_on~ipad.png"; sourceTree = "<group>"; };
+		A6ADF8DB1EB18DD9000782F4 /* fps.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = fps.c; path = src/cdogs/hud/fps.c; sourceTree = "<group>"; };
+		A6ADF8DC1EB18DD9000782F4 /* hud_num_popup.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hud_num_popup.c; path = src/cdogs/hud/hud_num_popup.c; sourceTree = "<group>"; };
+		A6ADF8DD1EB18DD9000782F4 /* hud.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hud.c; path = src/cdogs/hud/hud.c; sourceTree = "<group>"; };
+		A6ADF8DE1EB18DD9000782F4 /* wall_clock.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = wall_clock.c; path = src/cdogs/hud/wall_clock.c; sourceTree = "<group>"; };
+		A6ADF8E31EB18E5C000782F4 /* actor_fire.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = actor_fire.c; path = src/cdogs/actor_fire.c; sourceTree = "<group>"; };
+		A6ADF8E51EB18E7C000782F4 /* AStar.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = AStar.c; path = src/cdogs/AStar.c; sourceTree = "<group>"; };
+		A6ADF8E71EB18E8A000782F4 /* actor_fire.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = actor_fire.h; path = src/cdogs/actor_fire.h; sourceTree = "<group>"; };
+		A6ADF8E81EB18F31000782F4 /* collision.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = collision.c; path = src/cdogs/collision/collision.c; sourceTree = "<group>"; };
+		A6ADF8E91EB18F31000782F4 /* minkowski_hex.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = minkowski_hex.c; path = src/cdogs/collision/minkowski_hex.c; sourceTree = "<group>"; };
+		A6ADF8EC1EB18F7B000782F4 /* char_sprites.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = char_sprites.c; path = src/cdogs/draw/char_sprites.c; sourceTree = "<group>"; };
+		A6ADF8ED1EB18F7B000782F4 /* draw_actor.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = draw_actor.c; path = src/cdogs/draw/draw_actor.c; sourceTree = "<group>"; };
+		A6ADF8EE1EB18F7B000782F4 /* draw_buffer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = draw_buffer.c; path = src/cdogs/draw/draw_buffer.c; sourceTree = "<group>"; };
+		A6ADF8EF1EB18F7B000782F4 /* draw_highlight.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = draw_highlight.c; path = src/cdogs/draw/draw_highlight.c; sourceTree = "<group>"; };
+		A6ADF8F01EB18F7B000782F4 /* draw.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = draw.c; path = src/cdogs/draw/draw.c; sourceTree = "<group>"; };
+		A6ADF8F11EB18F7B000782F4 /* drawtools.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = drawtools.c; path = src/cdogs/draw/drawtools.c; sourceTree = "<group>"; };
+		A6ADF8F81EB18FC6000782F4 /* command_line.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = command_line.c; path = src/command_line.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -678,6 +689,7 @@
 				A62721291D329CFA002D4213 /* autosave.c */,
 				A627212A1D329CFA002D4213 /* briefing_screens.c */,
 				A627212B1D329CFA002D4213 /* cdogs.c */,
+				A6ADF8F81EB18FC6000782F4 /* command_line.c */,
 				A627212C1D329CFA002D4213 /* credits.c */,
 				A62723E61D32B509002D4213 /* game.c */,
 				A627212D1D329CFA002D4213 /* mainmenu.c */,
@@ -729,6 +741,8 @@
 		A62721A31D32ADE1002D4213 /* Source Files */ = {
 			isa = PBXGroup;
 			children = (
+				A6ADF8E51EB18E7C000782F4 /* AStar.c */,
+				A6ADF8E31EB18E5C000782F4 /* actor_fire.c */,
 				A627226C1D32AF3E002D4213 /* actor_placement.c */,
 				A627226E1D32AF3E002D4213 /* actors.c */,
 				A62722701D32AF3E002D4213 /* ai_context.c */,
@@ -738,7 +752,6 @@
 				A62722781D32AF3E002D4213 /* algorithms.c */,
 				A627227A1D32AF3E002D4213 /* ammo.c */,
 				A627227C1D32AF3E002D4213 /* animation.c */,
-				A627227E1D32AF3E002D4213 /* AStar.c */,
 				A62722801D32AF3E002D4213 /* automap.c */,
 				A62722821D32AF3E002D4213 /* blit.c */,
 				A62722841D32AF3E002D4213 /* bullet_class.c */,
@@ -748,7 +761,8 @@
 				A627229A1D32AF6E002D4213 /* campaigns.c */,
 				A627229F1D32AF78002D4213 /* character_class.c */,
 				A62722A11D32AF78002D4213 /* character.c */,
-				A62722A51D32AF83002D4213 /* collision.c */,
+				A6ADF8E81EB18F31000782F4 /* collision.c */,
+				A6ADF8E91EB18F31000782F4 /* minkowski_hex.c */,
 				A62722A71D32AF83002D4213 /* color.c */,
 				A62722A91D32AF83002D4213 /* config_apply.c */,
 				A62722AA1D32AF83002D4213 /* config_io.c */,
@@ -759,9 +773,12 @@
 				A62722BC1D32AF8D002D4213 /* damage.c */,
 				A62722BF1D32AF96002D4213 /* defs.c */,
 				A62722C11D32AF96002D4213 /* door.c */,
-				A62722C31D32AF96002D4213 /* draw_buffer.c */,
-				A62722C51D32AF96002D4213 /* draw.c */,
-				A62722C71D32AF96002D4213 /* drawtools.c */,
+				A6ADF8EC1EB18F7B000782F4 /* char_sprites.c */,
+				A6ADF8ED1EB18F7B000782F4 /* draw_actor.c */,
+				A6ADF8EE1EB18F7B000782F4 /* draw_buffer.c */,
+				A6ADF8EF1EB18F7B000782F4 /* draw_highlight.c */,
+				A6ADF8F01EB18F7B000782F4 /* draw.c */,
+				A6ADF8F11EB18F7B000782F4 /* drawtools.c */,
 				A62722C91D32AF96002D4213 /* emitter.c */,
 				A62722D11D32AFA2002D4213 /* events.c */,
 				A62722D31D32AFA2002D4213 /* files.c */,
@@ -775,7 +792,10 @@
 				A62722E31D32AFA2002D4213 /* grafx.c */,
 				A62722E51D32AFA2002D4213 /* handle_game_events.c */,
 				A62722E71D32AFA2002D4213 /* hiscores.c */,
-				A62722E91D32AFA2002D4213 /* hud.c */,
+				A6ADF8DB1EB18DD9000782F4 /* fps.c */,
+				A6ADF8DC1EB18DD9000782F4 /* hud_num_popup.c */,
+				A6ADF8DD1EB18DD9000782F4 /* hud.c */,
+				A6ADF8DE1EB18DD9000782F4 /* wall_clock.c */,
 				A62722F81D32AFB5002D4213 /* joystick.c */,
 				A62722FA1D32AFB5002D4213 /* json_utils.c */,
 				A62722FC1D32AFB5002D4213 /* keyboard.c */,
@@ -801,7 +821,6 @@
 				A62723271D32AFCE002D4213 /* palette.c */,
 				A62723291D32AFCE002D4213 /* particle.c */,
 				A627232B1D32AFCE002D4213 /* path_cache.c */,
-				A627232D1D32AFCE002D4213 /* pic_file.c */,
 				A627232F1D32AFCE002D4213 /* pic_manager.c */,
 				A62723311D32AFCE002D4213 /* pic.c */,
 				A62723331D32AFCF002D4213 /* pickup_class.c */,
@@ -831,6 +850,7 @@
 			isa = PBXGroup;
 			children = (
 				A62721A41D32ADE1002D4213 /* AStar.h */,
+				A6ADF8E71EB18E8A000782F4 /* actor_fire.h */,
 				A62721A51D32ADE1002D4213 /* actor_placement.h */,
 				A62721A61D32ADE1002D4213 /* actors.h */,
 				A62721A71D32ADE1002D4213 /* ai.h */,
@@ -849,7 +869,6 @@
 				A62721B41D32ADE1002D4213 /* campaigns.h */,
 				A62721B51D32ADE1002D4213 /* character.h */,
 				A62721B61D32ADE1002D4213 /* character_class.h */,
-				A62721B71D32ADE1002D4213 /* collision.h */,
 				A62721B81D32ADE1002D4213 /* color.h */,
 				A62721B91D32ADE1002D4213 /* config.h */,
 				A62721BA1D32ADE1002D4213 /* config_io.h */,
@@ -859,9 +878,6 @@
 				A62721BE1D32ADE1002D4213 /* damage.h */,
 				A62721BF1D32ADE1002D4213 /* defs.h */,
 				A62721C01D32ADE1002D4213 /* door.h */,
-				A62721C11D32ADE1002D4213 /* draw.h */,
-				A62721C21D32ADE1002D4213 /* draw_buffer.h */,
-				A62721C31D32ADE1002D4213 /* drawtools.h */,
 				A62721C41D32ADE1002D4213 /* emitter.h */,
 				A62721C51D32ADE1002D4213 /* events.h */,
 				A62721C61D32ADE1002D4213 /* files.h */,
@@ -875,7 +891,6 @@
 				A62721CE1D32ADE1002D4213 /* grafx_bg.h */,
 				A62721CF1D32ADE1002D4213 /* handle_game_events.h */,
 				A62721D01D32ADE1002D4213 /* hiscores.h */,
-				A62721D11D32ADE1002D4213 /* hud.h */,
 				A62721D21D32ADE1002D4213 /* joystick.h */,
 				A62721D31D32ADE1002D4213 /* json_utils.h */,
 				A62721D41D32ADE1002D4213 /* keyboard.h */,
@@ -902,7 +917,6 @@
 				A62721E91D32ADE1002D4213 /* particle.h */,
 				A62721EA1D32ADE1002D4213 /* path_cache.h */,
 				A62721EB1D32ADE1002D4213 /* pic.h */,
-				A62721EC1D32ADE1002D4213 /* pic_file.h */,
 				A62721ED1D32ADE1002D4213 /* pic_manager.h */,
 				A62721EE1D32ADE1002D4213 /* pickup.h */,
 				A62721EF1D32ADE1002D4213 /* pickup_class.h */,
@@ -1480,11 +1494,13 @@
 				A62723DA1D32B3EA002D4213 /* peer.c in Sources */,
 				A62721411D329CFA002D4213 /* prep.c in Sources */,
 				A62722B91D32AF83002D4213 /* config_old.c in Sources */,
+				A6ADF8F51EB18F7B000782F4 /* draw_highlight.c in Sources */,
 				A62722921D32AF3E002D4213 /* automap.c in Sources */,
 				A62722891D32AF3E002D4213 /* actors.c in Sources */,
 				A62723571D32AFCF002D4213 /* pic.c in Sources */,
-				A62722CE1D32AF96002D4213 /* draw.c in Sources */,
 				A62723D91D32B3EA002D4213 /* packet.c in Sources */,
+				A6ADF8F41EB18F7B000782F4 /* draw_buffer.c in Sources */,
+				A6ADF8F31EB18F7B000782F4 /* draw_actor.c in Sources */,
 				A62722BA1D32AF83002D4213 /* config.c in Sources */,
 				A627234F1D32AFCF002D4213 /* net_util.c in Sources */,
 				A62721431D329CFA002D4213 /* screens.c in Sources */,
@@ -1494,9 +1510,11 @@
 				A62723541D32AFCF002D4213 /* path_cache.c in Sources */,
 				A62723741D32B013002D4213 /* triggers.c in Sources */,
 				A62723511D32AFCF002D4213 /* objs.c in Sources */,
+				A6ADF8F61EB18F7B000782F4 /* draw.c in Sources */,
 				A627242B1D32C881002D4213 /* yajl_tree.c in Sources */,
 				A62723631D32AFED002D4213 /* screen_shake.c in Sources */,
 				A62723441D32AFCF002D4213 /* map_classic.c in Sources */,
+				A6ADF8E61EB18E7C000782F4 /* AStar.c in Sources */,
 				A62723531D32AFCF002D4213 /* particle.c in Sources */,
 				A62722CC1D32AF96002D4213 /* door.c in Sources */,
 				A62724271D32C881002D4213 /* yajl_encode.c in Sources */,
@@ -1505,29 +1523,34 @@
 				A62722B61D32AF83002D4213 /* config_apply.c in Sources */,
 				A627229C1D32AF6E002D4213 /* camera.c in Sources */,
 				A627242D1D32C881002D4213 /* yajl.c in Sources */,
-				A62722911D32AF3E002D4213 /* AStar.c in Sources */,
 				A62722FE1D32AFB5002D4213 /* joystick.c in Sources */,
 				A62722F21D32AFA2002D4213 /* gamedata.c in Sources */,
 				A62722901D32AF3E002D4213 /* animation.c in Sources */,
+				A6ADF8E41EB18E5C000782F4 /* actor_fire.c in Sources */,
 				A62723E41D32B496002D4213 /* pb_decode.c in Sources */,
 				A62722881D32AF3E002D4213 /* actor_placement.c in Sources */,
+				A6ADF8DF1EB18DD9000782F4 /* fps.c in Sources */,
 				A627213A1D329CFA002D4213 /* credits.c in Sources */,
 				A627234C1D32AFCF002D4213 /* music.c in Sources */,
+				A6ADF8F21EB18F7B000782F4 /* char_sprites.c in Sources */,
 				A62723431D32AFCF002D4213 /* map_cave.c in Sources */,
+				A6ADF8E01EB18DD9000782F4 /* hud_num_popup.c in Sources */,
 				A62723401D32AFCF002D4213 /* los.c in Sources */,
 				A62723DB1D32B3EA002D4213 /* protocol.c in Sources */,
 				A62723F11D32C7F0002D4213 /* json.c in Sources */,
 				A62723561D32AFCF002D4213 /* pic_manager.c in Sources */,
 				A627213B1D329CFA002D4213 /* mainmenu.c in Sources */,
 				A62721401D329CFA002D4213 /* player_select_menus.c in Sources */,
+				A6ADF8EA1EB18F31000782F4 /* collision.c in Sources */,
 				A62721391D329CFA002D4213 /* cdogs.c in Sources */,
 				A62722FF1D32AFB5002D4213 /* json_utils.c in Sources */,
 				A62723591D32AFCF002D4213 /* pickup.c in Sources */,
 				A62723E31D32B496002D4213 /* pb_common.c in Sources */,
 				A627213D1D329CFA002D4213 /* menu.c in Sources */,
+				A6ADF8E11EB18DD9000782F4 /* hud.c in Sources */,
 				A62721421D329CFA002D4213 /* screens_end.c in Sources */,
+				A6ADF8EB1EB18F31000782F4 /* minkowski_hex.c in Sources */,
 				A62722BE1D32AF8D002D4213 /* damage.c in Sources */,
-				A62723551D32AFCF002D4213 /* pic_file.c in Sources */,
 				A62721371D329CFA002D4213 /* autosave.c in Sources */,
 				A62721281D329CB9002D4213 /* XGetopt.c in Sources */,
 				A62723751D32B013002D4213 /* utils.c in Sources */,
@@ -1537,6 +1560,7 @@
 				A62723581D32AFCF002D4213 /* pickup_class.c in Sources */,
 				A62724291D32C881002D4213 /* yajl_lex.c in Sources */,
 				A627235A1D32AFCF002D4213 /* pics.c in Sources */,
+				A6ADF8F71EB18F7B000782F4 /* drawtools.c in Sources */,
 				A62723D71D32B3EA002D4213 /* host.c in Sources */,
 				A627233F1D32AFCF002D4213 /* log.c in Sources */,
 				A62723481D32AFCF002D4213 /* map.c in Sources */,
@@ -1545,26 +1569,22 @@
 				A62723001D32AFB5002D4213 /* keyboard.c in Sources */,
 				A627234B1D32AFCF002D4213 /* mouse.c in Sources */,
 				A62723DC1D32B3EA002D4213 /* unix.c in Sources */,
-				A62722F71D32AFA2002D4213 /* hud.c in Sources */,
 				A62722EE1D32AFA2002D4213 /* font.c in Sources */,
 				A62724281D32C881002D4213 /* yajl_gen.c in Sources */,
 				A627213E1D329CFA002D4213 /* namegen.c in Sources */,
 				A62723601D32AFDD002D4213 /* quick_play.c in Sources */,
 				A62723421D32AFCF002D4213 /* map_build.c in Sources */,
 				A627234E1D32AFCF002D4213 /* net_server.c in Sources */,
-				A62722CD1D32AF96002D4213 /* draw_buffer.c in Sources */,
 				A627242C1D32C881002D4213 /* yajl_version.c in Sources */,
 				A627228E1D32AF3E002D4213 /* algorithms.c in Sources */,
 				A62723D61D32B3EA002D4213 /* compress.c in Sources */,
 				A627235D1D32AFCF002D4213 /* powerup.c in Sources */,
 				A62723661D32AFF9002D4213 /* sounds.c in Sources */,
 				A62723D51D32B3EA002D4213 /* callbacks.c in Sources */,
-				A62722B41D32AF83002D4213 /* collision.c in Sources */,
 				A62723411D32AFCF002D4213 /* map_archive.c in Sources */,
 				A627234D1D32AFCF002D4213 /* net_client.c in Sources */,
 				A627213C1D329CFA002D4213 /* menu_utils.c in Sources */,
 				A62723491D32AFCF002D4213 /* mission_convert.c in Sources */,
-				A62722CF1D32AF96002D4213 /* drawtools.c in Sources */,
 				A62722EB1D32AFA2002D4213 /* events.c in Sources */,
 				A627228D1D32AF3E002D4213 /* ai.c in Sources */,
 				A62722B81D32AF83002D4213 /* config_json.c in Sources */,
@@ -1577,6 +1597,7 @@
 				A62723D81D32B3EA002D4213 /* list.c in Sources */,
 				A62723781D32B013002D4213 /* yajl_utils.c in Sources */,
 				A62723FB1D32C835002D4213 /* hashmap.c in Sources */,
+				A6ADF8F91EB18FC6000782F4 /* command_line.c in Sources */,
 				A62722951D32AF3E002D4213 /* c_array.c in Sources */,
 				A62722F41D32AFA2002D4213 /* grafx.c in Sources */,
 				A62722D01D32AF96002D4213 /* emitter.c in Sources */,
@@ -1586,6 +1607,7 @@
 				A62722A41D32AF78002D4213 /* character.c in Sources */,
 				A62722CB1D32AF96002D4213 /* defs.c in Sources */,
 				A62722941D32AF3E002D4213 /* bullet_class.c in Sources */,
+				A6ADF8E21EB18DD9000782F4 /* wall_clock.c in Sources */,
 				A627242A1D32C881002D4213 /* yajl_parser.c in Sources */,
 				A62723E51D32B496002D4213 /* pb_encode.c in Sources */,
 				A627235C1D32AFCF002D4213 /* player.c in Sources */,
@@ -1733,6 +1755,7 @@
 					"/Users/MyStaub/Documents/git/CliffsDover/cdogs-sdl/iOS/libraries/SDL2_image-2.0.1",
 					"/Users/MyStaub/Documents/git/CliffsDover/cdogs-sdl/iOS/libraries/SDL2_mixer-2.0.1",
 					"/Users/MyStaub/Documents/git/CliffsDover/cdogs-sdl/src/cdogs/include",
+					"/Users/MyStaub/Documents/git/CliffsDover/cdogs-sdl/src/cdogs",
 				);
 				INFOPLIST_FILE = "cdogs-iOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -1766,6 +1789,7 @@
 					"/Users/MyStaub/Documents/git/CliffsDover/cdogs-sdl/iOS/libraries/SDL2_image-2.0.1",
 					"/Users/MyStaub/Documents/git/CliffsDover/cdogs-sdl/iOS/libraries/SDL2_mixer-2.0.1",
 					"/Users/MyStaub/Documents/git/CliffsDover/cdogs-sdl/src/cdogs/include",
+					"/Users/MyStaub/Documents/git/CliffsDover/cdogs-sdl/src/cdogs",
 				);
 				INFOPLIST_FILE = "cdogs-iOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";

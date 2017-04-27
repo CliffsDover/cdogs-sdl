@@ -29,7 +29,7 @@
 #include "config.h"
 
 #include "blit.h"
-#include "collision.h"
+#include "collision/collision.h"
 #include "gamedata.h"
 #include "grafx_bg.h"
 #include "pic_manager.h"
@@ -37,8 +37,7 @@
 
 bool ConfigApply(Config *config)
 {
-	gCampaign.seed = ConfigGetInt(config, "Game.RandomSeed");
-	CollisionSystemInit(&gCollisionSystem);
+	CollisionSystemReset(&gCollisionSystem);
 	if (ConfigChanged(ConfigGet(config, "Sound")))
 	{
 		SoundReconfigure(&gSoundDevice);
@@ -46,9 +45,15 @@ bool ConfigApply(Config *config)
 	if (ConfigChanged(ConfigGet(config, "Graphics")))
 	{
 		GraphicsConfigSetFromConfig(&gGraphicsDevice.cachedConfig, config);
-		GraphicsInitialize(&gGraphicsDevice, false);
-		GrafxMakeRandomBackground(
-			&gGraphicsDevice, &gCampaign, &gMission, &gMap);
+		const bool makeBackground =
+			gGraphicsDevice.cachedConfig.RestartFlags &
+			(RESTART_RESOLUTION | RESTART_SCALE_MODE);
+		GraphicsInitialize(&gGraphicsDevice);
+		if (makeBackground)
+		{
+			GrafxMakeRandomBackground(
+				&gGraphicsDevice, &gCampaign, &gMission, &gMap);
+		}
 	}
 	ConfigSetChanged(config);
 	return gGraphicsDevice.IsInitialized;

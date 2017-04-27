@@ -54,7 +54,7 @@
 
 #include "algorithms.h"
 #include "ammo.h"
-#include "collision.h"
+#include "collision/collision.h"
 #include "config.h"
 #include "door.h"
 #include "game_events.h"
@@ -188,11 +188,6 @@ bool MapTryMoveTileItem(Map *map, TTileItem *t, Vec2i pos)
 }
 static void AddItemToTile(TTileItem *t, Tile *tile)
 {
-	// Lazy initialisation
-	if (tile->things.elemSize == 0)
-	{
-		CArrayInit(&tile->things, sizeof(ThingId));
-	}
 	ThingId tid;
 	tid.Id = t->id;
 	tid.Kind = t->kind;
@@ -216,11 +211,6 @@ void MapRemoveTileItem(Map *map, TTileItem *t)
 		}
 	CA_FOREACH_END()
 	CASSERT(false, "Did not find element to delete");
-}
-
-static Vec2i GuessCoords(Map *map)
-{
-	return Vec2iNew(rand() % map->Size.x, rand() % map->Size.y);
 }
 
 static Vec2i GuessPixelCoords(Map *map)
@@ -250,10 +240,6 @@ void MapChangeFloor(
 	Tile *tAbove = MapGetTile(map, Vec2iNew(pos.x, pos.y - 1));
 	int canSeeTileAbove = !(pos.y > 0 && !TileCanSee(tAbove));
 	Tile *t = MapGetTile(map, pos);
-	if (t->flags & MAPTILE_IS_DRAINAGE)
-	{
-		return;
-	}
 	switch (IMapGet(map, pos) & MAP_MASKACCESS)
 	{
 	case MAP_FLOOR:
@@ -379,9 +365,7 @@ bool MapTryPlaceOneObject(
 	{
 		return false;
 	}
-	Vec2i realPos = Vec2iCenterOfTile(v);
-	int tileFlags = 0;
-	Tile *t = MapGetTile(map, v);
+	const Tile *t = MapGetTile(map, v);
 	unsigned short iMap = IMapGet(map, v);
 
 	const bool isEmpty = TileIsClear(t);
@@ -405,50 +389,14 @@ bool MapTryPlaceOneObject(
 		IMapSet(map, Vec2iNew(v.x, v.y + 1), IMapGet(map, Vec2iNew(v.x, v.y + 1)) | MAP_LEAVEFREE);
 	}
 
-	// For on-wall objects, set their position to the top of the tile
-	// This guarantees that they are drawn last
-	if (mo->Flags & (1 << PLACEMENT_ON_WALL))
-	{
-		realPos.y -= TILE_HEIGHT / 2 + 1;
-	}
-
-	if (MapObjectIsWreck(mo))
-	{
-		tileFlags |= TILEITEM_IS_WRECK;
-	}
-	else if (!(mo->Flags & (1 << PLACEMENT_ON_WALL)))
-	{
-		tileFlags |= TILEITEM_IMPASSABLE;
-		tileFlags |= TILEITEM_CAN_BE_SHOT;
-	}
-
 	NMapObjectAdd amo = NMapObjectAdd_init_default;
 	amo.UID = ObjsGetNextUID();
 	strcpy(amo.MapObjectClass, mo->Name);
-	amo.Pos = Vec2i2Net(realPos);
-	amo.TileItemFlags = tileFlags | extraFlags;
+	amo.Pos = Vec2i2Net(MapObjectGetPlacementPos(mo, v));
+	amo.TileItemFlags = MapObjectGetFlags(mo) | extraFlags;
 	amo.Health = mo->Health;
 	ObjAdd(amo);
 	return true;
-}
-
-void MapPlaceWreck(Map *map, const Vec2i v, const MapObject *mo)
-{
-	Tile *t = MapGetTile(map, v);
-	unsigned short iMap = IMapGet(map, v);
-	if (!MapObjectIsTileOK(
-		mo, iMap, TileIsClear(t), IMapGet(map, Vec2iNew(v.x, v.y - 1))))
-	{
-		return;
-	}
-	NMapObjectAdd amo = NMapObjectAdd_init_default;
-	amo.UID = ObjsGetNextUID();
-	strcpy(amo.MapObjectClass, mo->Name);
-	amo.Pos = Vec2i2Net(Vec2iCenterOfTile(v));
-	amo.TileItemFlags = TILEITEM_IS_WRECK;
-	// Set health to 0 to force into a wreck
-	amo.Health = 0;
-	ObjAdd(amo);
 }
 
 int MapHasLockedRooms(Map *map)
@@ -527,7 +475,7 @@ static bool MapTryPlaceBlowup(
 
 	while (i > 0)
 	{
-		Vec2i v = GuessCoords(map);
+		const Vec2i v = MapGetRandomTile(map);
 		if ((!hasLockedRooms || (IMapGet(map, v) >> 8)) &&
 			(!noaccess || (IMapGet(map, v) >> 8) == 0))
 		{
@@ -566,7 +514,7 @@ static void MapPlaceCard(Map *map, int keyIndex, int map_access)
 {
 	for (;;)
 	{
-		Vec2i v = GuessCoords(map);
+		const Vec2i v = MapGetRandomTile(map);
 		Tile *t;
 		Tile *tBelow;
 		unsigned short iMap;
@@ -705,7 +653,7 @@ void MapLoad(
 		MapStaticLoad(map, mo);
 		break;
 	case MAPTYPE_CAVE:
-		MapCaveLoad(map, mo);
+		MapCaveLoad(map, mo, co);
 		break;
 	default:
 		CASSERT(false, "unknown map type");
@@ -714,6 +662,25 @@ void MapLoad(
 
 	MapSetupTilesAndWalls(map, mission);
 	MapSetupDoors(map, mission);
+
+	if (mission->Type == MAPTYPE_CLASSIC)
+	{
+		// Randomly add drainage tiles for classic map type;
+		// For other map types drains are regular map objects
+		const MapObject *drain = StrMapObject("drain0");
+		for (int i = 0; i < map->Size.x*map->Size.y / 45; i++)
+		{
+			// Make sure drain tiles aren't next to each other
+			v = Vec2iNew(
+				(rand() % map->Size.x) & 0xFFFFFE,
+				(rand() % map->Size.y) & 0xFFFFFE);
+			const Tile *t = MapGetTile(map, v);
+			if (TileIsNormalFloor(t))
+			{
+				MapTryPlaceOneObject(map, v, drain, 0, false);
+			}
+		}
+	}
 
 	// Set exit now since we have set up all the tiles
 	if (Vec2iIsZero(map->ExitStart) && Vec2iIsZero(map->ExitEnd))
@@ -882,7 +849,7 @@ bool MapIsTileAreaClear(Map *map, const Vec2i fullPos, const Vec2i size)
 			{
 				const TTileItem *ti =
 					ThingIdGetTileItem(CArrayGet(tileThings, i));
-				if (AreasCollide(
+				if (AABBOverlap(
 						realPos, Vec2iNew(ti->x, ti->y), size, ti->size))
 				{
 					return false;

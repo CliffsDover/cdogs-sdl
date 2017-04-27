@@ -72,11 +72,13 @@ typedef struct
 	int RangeLow;
 	int RangeHigh;
 	int Power;
+	double Mass;
 	Vec2i Size;
 	special_damage_e Special;
 	bool HurtAlways;
 	bool Persists;	// remains even after hitting walls/items
 	const ParticleClass *Spark;
+	const ParticleClass *OutOfRangeSpark;
 	HitSounds HitSound;
 	bool WallBounces;
 	bool HitsObjects;

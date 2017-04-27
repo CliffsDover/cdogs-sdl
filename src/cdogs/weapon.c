@@ -22,7 +22,7 @@
     This file incorporates work covered by the following copyright and
     permission notice:
 
-    Copyright (c) 2013-2016, Cong Xu
+    Copyright (c) 2013-2017, Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -63,42 +63,6 @@
 #include "sounds.h"
 
 GunClasses gGunDescriptions;
-
-const TOffsetPic cGunPics[GUNPIC_COUNT][DIRECTION_COUNT][GUNSTATE_COUNT] = {
-	{
-	 {{-2, -10, 86}, {-3, -8, 78}, {-3, -7, 78}},
-	 {{-2, -10, 87}, {-2, -9, 79}, {-3, -8, 79}},
-	 {{0, -12, 88}, {0, -5, 80}, {-1, -5, 80}},
-	 {{-2, -9, 90}, {0, -2, 81}, {-1, -3, 81}},
-	 {{-2, -9, 90}, {-1, -2, 82}, {-1, -3, 82}},
-	 {{-6, -10, 91}, {-7, -4, 83}, {-6, -5, 83}},
-	 {{-8, -11, 92}, {-12, -6, 84}, {-11, -6, 84}},
-	 {{-6, -14, 93}, {-8, -12, 85}, {-7, -11, 85}}
-	 },
-	{
-	 {{-1, -7, 142}, {-1, -7, 142}, {-1, -7, 142}},
-	 {{-1, -7, 142}, {-1, -7, 142}, {-1, -7, 142}},
-	 {{-2, -8, 143}, {-2, -8, 143}, {-2, -8, 143}},
-	 {{-3, -5, 144}, {-3, -5, 144}, {-3, -5, 144}},
-	 {{-3, -5, 144}, {-3, -5, 144}, {-3, -5, 144}},
-	 {{-3, -5, 144}, {-3, -5, 144}, {-3, -5, 144}},
-	 {{-8, -10, 145}, {-8, -10, 145}, {-8, -10, 145}},
-	 {{-8, -10, 145}, {-8, -10, 145}, {-8, -10, 145}}
-	 }
-};
-
-const OffsetTable cMuzzleOffset[GUNPIC_COUNT] = {
-	{
-	 {2, 0},
-	 {7, 2},
-	 {13, 2},
-	 {7, 6},
-	 {2, 6},
-	 {2, 6},
-	 {0, 2},
-	 {2, 2}
-	 }
-};
 
 // Initialise all the static weapon data
 #define VERSION 1
@@ -210,18 +174,9 @@ static void LoadGunDescription(
 	LoadStr(&tmp, node, "Pic");
 	if (tmp != NULL)
 	{
-		if (strcmp(tmp, "blaster") == 0)
-		{
-			g->pic = GUNPIC_BLASTER;
-		}
-		else if (strcmp(tmp, "knife") == 0)
-		{
-			g->pic = GUNPIC_KNIFE;
-		}
-		else
-		{
-			g->pic = -1;
-		}
+		char buf[CDOGS_PATH_MAX];
+		sprintf(buf, "chars/guns/%s", tmp);
+		g->Pic = PicManagerGetSprites(&gPicManager, buf);
 		CFREE(tmp);
 	}
 
@@ -359,6 +314,11 @@ static void GunDescriptionTerminate(GunDescription *g)
 	memset(g, 0, sizeof *g);
 }
 
+int GunGetNumClasses(const GunClasses *g)
+{
+	return (int)g->Guns.size + (int)g->CustomGuns.size;
+}
+
 Weapon WeaponCreate(const GunDescription *gun)
 {
 	Weapon w;
@@ -425,25 +385,37 @@ int GunDescriptionId(const GunDescription *g)
 	CASSERT(false, "cannot find gun");
 	return -1;
 }
-
-void WeaponUpdate(
-	Weapon *w, const int ticks, const Vec2i fullPos, const direction_e d,
-	const int playerUID)
+GunDescription *IndexGunDescriptionReal(const int i)
 {
-	// Reload sound
-	if (ConfigGetBool(&gConfig, "Sound.Reloads") &&
-		w->lock > w->Gun->ReloadLead &&
-		w->lock - ticks <= w->Gun->ReloadLead &&
-		w->lock > 0 &&
-		w->Gun->ReloadSound != NULL)
-	{
-		GameEvent e = GameEventNew(GAME_EVENT_GUN_RELOAD);
-		e.u.GunReload.PlayerUID = playerUID;
-		strcpy(e.u.GunReload.Gun, w->Gun->name);
-		e.u.GunReload.FullPos = Vec2i2Net(fullPos);
-		e.u.GunReload.Direction = (int)d;
-		GameEventsEnqueue(&gGameEvents, e);
-	}
+	int j = 0;
+	CA_FOREACH(GunDescription, g, gGunDescriptions.Guns)
+		if (!g->IsRealGun)
+		{
+			continue;
+		}
+		if (j == i)
+		{
+			return g;
+		}
+		j++;
+	CA_FOREACH_END()
+	CA_FOREACH(GunDescription, g, gGunDescriptions.CustomGuns)
+		if (!g->IsRealGun)
+		{
+			continue;
+		}
+		if (j == i)
+		{
+			return g;
+		}
+		j++;
+	CA_FOREACH_END()
+	CASSERT(false, "cannot find gun");
+	return NULL;
+}
+
+void WeaponUpdate(Weapon *w, const int ticks)
+{
 	w->lock -= ticks;
 	if (w->lock < 0)
 	{
@@ -462,9 +434,20 @@ void WeaponUpdate(
 	if (w->stateCounter >= 0)
 	{
 		w->stateCounter = MAX(0, w->stateCounter - ticks);
-		if (w->stateCounter == 0 && w->state == GUNSTATE_FIRING)
+		if (w->stateCounter == 0)
 		{
-			WeaponSetState(w, GUNSTATE_RECOIL);
+			switch (w->state)
+			{
+			case GUNSTATE_FIRING:
+				WeaponSetState(w, GUNSTATE_RECOIL);
+				break;
+			case GUNSTATE_RECOIL:
+				WeaponSetState(w, GUNSTATE_FIRING);
+				break;
+			default:
+				// do nothing
+				break;
+			}
 		}
 	}
 }
@@ -472,37 +455,6 @@ void WeaponUpdate(
 bool WeaponIsLocked(const Weapon *w)
 {
 	return w->lock > 0;
-}
-
-void WeaponFire(
-	Weapon *w, const direction_e d, const Vec2i pos,
-	const int flags, const int playerUID, const int uid)
-{
-	if (w->state != GUNSTATE_FIRING && w->state != GUNSTATE_RECOIL)
-	{
-		GameEvent e = GameEventNew(GAME_EVENT_GUN_STATE);
-		e.u.GunState.ActorUID = uid;
-		e.u.GunState.State = GUNSTATE_FIRING;
-		GameEventsEnqueue(&gGameEvents, e);
-	}
-	if (!w->Gun->CanShoot)
-	{
-		return;
-	}
-
-	const double radians = dir2radians[d];
-	const Vec2i muzzleOffset = GunGetMuzzleOffset(w->Gun, d);
-	const Vec2i muzzlePosition = Vec2iAdd(pos, muzzleOffset);
-	const bool playSound = w->soundLock <= 0;
-	GunFire(
-		w->Gun, muzzlePosition, w->Gun->MuzzleHeight, radians,
-		flags, playerUID, uid, playSound, true);
-	if (playSound)
-	{
-		w->soundLock = w->Gun->SoundLockLength;
-	}
-
-	w->lock = w->Gun->Lock;
 }
 
 void GunFire(
@@ -527,6 +479,11 @@ void GunFire(
 void GunAddBrass(
 	const GunDescription *g, const direction_e d, const Vec2i pos)
 {
+	// Check configuration
+	if (!ConfigGetBool(&gConfig, "Graphics.Brass"))
+	{
+		return;
+	}
 	CASSERT(g->Brass, "Cannot create brass for no-brass weapon");
 	GameEvent e = GameEventNew(GAME_EVENT_ADD_PARTICLE);
 	e.u.AddParticle.Class = g->Brass;
@@ -535,9 +492,7 @@ void GunAddBrass(
 	GetVectorsForRadians(radians, &x, &y);
 	const Vec2i ejectionPortOffset = Vec2iReal2Full(Vec2iScale(Vec2iNew(
 		(int)round(x), (int)round(y)), 7));
-	const Vec2i muzzleOffset = GunGetMuzzleOffset(g, d);
-	const Vec2i muzzlePosition = Vec2iAdd(pos, muzzleOffset);
-	e.u.AddParticle.FullPos = Vec2iMinus(muzzlePosition, ejectionPortOffset);
+	e.u.AddParticle.FullPos = Vec2iMinus(pos, ejectionPortOffset);
 	e.u.AddParticle.Z = g->MuzzleHeight;
 	e.u.AddParticle.Vel = Vec2iScaleDiv(
 		GetFullVectorsForRadians(radians + PI / 2), 3);
@@ -549,23 +504,26 @@ void GunAddBrass(
 	GameEventsEnqueue(&gGameEvents, e);
 }
 
-Vec2i GunGetMuzzleOffset(const GunDescription *desc, const direction_e dir)
+static Vec2i GetMuzzleOffset(const direction_e d);
+Vec2i GunGetMuzzleOffset(
+	const GunDescription *desc, const CharSprites *cs, const direction_e dir)
 {
 	if (!GunHasMuzzle(desc))
 	{
 		return Vec2iZero();
 	}
-	gunpic_e g = desc->pic;
-	CASSERT(g >= 0, "Gun has no pic");
-	int body = (int)g < 0 ? BODY_UNARMED : BODY_ARMED;
-	Vec2i position = Vec2iNew(
-		cGunHandOffset[body][dir].dx +
-		cGunPics[g][dir][GUNSTATE_FIRING].dx +
-		cMuzzleOffset[g][dir].dx,
-		cGunHandOffset[body][dir].dy +
-		cGunPics[g][dir][GUNSTATE_FIRING].dy +
-		cMuzzleOffset[g][dir].dy + BULLET_Z);
+	CASSERT(desc->Pic != NULL, "Gun has no pic");
+	const Vec2i gunOffset = cs->Offsets.Dir[BODY_PART_GUN][dir];
+	const Vec2i position = Vec2iAdd(gunOffset, GetMuzzleOffset(dir));
 	return Vec2iReal2Full(position);
+}
+static Vec2i GetMuzzleOffset(const direction_e d)
+{
+	// TODO: gun-specific muzzle offsets
+	#define BARREL_LENGTH 10
+	Vec2i v = Vec2iFromPolar(BARREL_LENGTH, dir2radians[d]);
+	v.y = v.y * 3 / 4;
+	return v;
 }
 
 void WeaponSetState(Weapon *w, const gunstate_e state)
@@ -574,12 +532,12 @@ void WeaponSetState(Weapon *w, const gunstate_e state)
 	switch (state)
 	{
 	case GUNSTATE_FIRING:
-		w->stateCounter = 8;
+		w->stateCounter = 4;
 		break;
 	case GUNSTATE_RECOIL:
 		// This is to make sure the gun stays recoiled as long as the gun is
 		// "locked", i.e. cannot fire
-		w->stateCounter = w->lock;
+		w->stateCounter = MAX(1, w->lock - 3);
 		break;
 	default:
 		w->stateCounter = -1;
@@ -589,7 +547,7 @@ void WeaponSetState(Weapon *w, const gunstate_e state)
 
 bool GunHasMuzzle(const GunDescription *g)
 {
-	return g->pic == GUNPIC_BLASTER;
+	return g->Pic != NULL && g->CanShoot;
 }
 bool IsHighDPS(const GunDescription *g)
 {

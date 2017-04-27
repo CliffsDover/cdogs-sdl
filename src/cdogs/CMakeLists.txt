@@ -4,6 +4,7 @@ include_directories(
 	${SDL2_MIXER_INCLUDE_DIRS})
 add_definitions(-DSTATIC)
 set(CDOGS_SOURCES
+	actor_fire.c
 	actor_placement.c
 	actors.c
 	ai.c
@@ -23,7 +24,8 @@ set(CDOGS_SOURCES
 	campaigns.c
 	character.c
 	character_class.c
-	collision.c
+	collision/collision.c
+	collision/minkowski_hex.c
 	color.c
 	config.c
 	config_apply.c
@@ -34,9 +36,12 @@ set(CDOGS_SOURCES
 	damage.c
 	defs.c
 	door.c
-	draw.c
-	draw_buffer.c
-	drawtools.c
+	draw/char_sprites.c
+	draw/draw.c
+	draw/draw_actor.c
+	draw/draw_buffer.c
+	draw/draw_highlight.c
+	draw/drawtools.c
 	emitter.c
 	events.c
 	files.c
@@ -50,7 +55,10 @@ set(CDOGS_SOURCES
 	grafx_bg.c
 	handle_game_events.c
 	hiscores.c
-	hud.c
+	hud/fps.c
+	hud/hud.c
+	hud/hud_num_popup.c
+	hud/wall_clock.c
 	joystick.c
 	json_utils.c
 	keyboard.c
@@ -77,7 +85,6 @@ set(CDOGS_SOURCES
 	particle.c
 	path_cache.c
 	pic.c
-	pic_file.c
 	pic_manager.c
 	pickup.c
 	pickup_class.c
@@ -95,6 +102,7 @@ set(CDOGS_SOURCES
 	weapon.c
 	yajl_utils.c)
 set(CDOGS_HEADERS
+	actor_fire.h
 	actor_placement.h
 	actors.h
 	ai.h
@@ -114,7 +122,8 @@ set(CDOGS_HEADERS
 	campaigns.h
 	character.h
 	character_class.h
-	collision.h
+	collision/collision.h
+	collision/minkowski_hex.h
 	color.h
 	config.h
 	config_io.h
@@ -124,9 +133,12 @@ set(CDOGS_HEADERS
 	damage.h
 	defs.h
 	door.h
-	draw.h
-	draw_buffer.h
-	drawtools.h
+	draw/char_sprites.h
+	draw/draw.h
+	draw/draw_actor.h
+	draw/draw_buffer.h
+	draw/draw_highlight.h
+	draw/drawtools.h
 	emitter.h
 	events.h
 	files.h
@@ -140,7 +152,11 @@ set(CDOGS_HEADERS
 	grafx_bg.h
 	handle_game_events.h
 	hiscores.h
-	hud.h
+	hud/fps.h
+	hud/hud.h
+	hud/hud_defs.h
+	hud/hud_num_popup.h
+	hud/wall_clock.h
 	joystick.h
 	json_utils.h
 	keyboard.h
@@ -167,7 +183,6 @@ set(CDOGS_HEADERS
 	particle.h
 	path_cache.h
 	pic.h
-	pic_file.h
 	pic_manager.h
 	pickup.h
 	pickup_class.h

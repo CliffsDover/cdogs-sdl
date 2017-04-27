@@ -110,6 +110,10 @@ message NVec2i {
 	required int32 y = 2;
 }
 
+message NGameBegin {
+	required int32 MissionTime = 1;
+}
+
 message NActorAdd {
 	required uint32 UID = 1;
 	required uint32 CharId = 2;
@@ -226,7 +230,8 @@ message NBulletBounce {
 	required int32 HitType = 2;
 	required bool Spark = 3;
 	required NVec2i BouncePos = 4;
-	required NVec2i BounceVel = 5;
+	required NVec2i Pos = 5;
+	required NVec2i Vel = 6;
 }
 
 message NRemoveBullet {

@@ -22,7 +22,7 @@
     This file incorporates work covered by the following copyright and
     permission notice:
 
-    Copyright (c) 2013-2016, Cong Xu
+    Copyright (c) 2013-2017, Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -49,38 +49,22 @@
 #include "game.h"
 
 #include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-
-#include <SDL.h>
 
 #include <cdogs/actor_placement.h>
 #include <cdogs/actors.h>
 #include <cdogs/ai.h>
 #include <cdogs/ai_coop.h>
-#include <cdogs/ammo.h>
 #include <cdogs/automap.h>
 #include <cdogs/camera.h>
-#include <cdogs/config.h>
+#include <cdogs/draw/drawtools.h>
 #include <cdogs/events.h>
-#include <cdogs/game_events.h>
+#include <cdogs/grafx_bg.h>
 #include <cdogs/handle_game_events.h>
-#include <cdogs/joystick.h>
 #include <cdogs/log.h>
 #include <cdogs/los.h>
-#include <cdogs/mission.h>
-#include <cdogs/music.h>
 #include <cdogs/net_client.h>
 #include <cdogs/net_server.h>
 #include <cdogs/objs.h>
-#include <cdogs/palette.h>
-#include <cdogs/particle.h>
-#include <cdogs/pic_manager.h>
-#include <cdogs/pics.h>
-#include <cdogs/powerup.h>
-#include <cdogs/triggers.h>
 
 
 static void PlayerSpecialCommands(TActor *actor, const int cmd)
@@ -175,6 +159,14 @@ static GameLoopResult RunGameUpdate(void *data);
 static void RunGameDraw(void *data);
 bool RunGame(const CampaignOptions *co, struct MissionOptions *m, Map *map)
 {
+	// Clear the background
+	DrawRectangle(
+		&gGraphicsDevice, Vec2iZero(), gGraphicsDevice.cachedConfig.Res,
+		colorBlack, 0);
+	SDL_UpdateTexture(
+		gGraphicsDevice.bkg, NULL, gGraphicsDevice.buf,
+		gGraphicsDevice.cachedConfig.Res.x * sizeof(Uint32));
+
 	MapLoad(map, m, co);
 
 	// Seed random if PVP mode (otherwise players will always spawn in same
@@ -276,6 +268,9 @@ bool RunGame(const CampaignOptions *co, struct MissionOptions *m, Map *map)
 	CArrayTerminate(&data.ammoSpawners);
 	CameraTerminate(&data.Camera);
 
+	// Draw background
+	GrafxRedrawBackground(&gGraphicsDevice, data.Camera.lastPosition);
+
 	return !m->IsQuit;
 }
 static void RunGameInput(void *data)
@@ -352,15 +347,6 @@ static void RunGameInput(void *data)
 		}
 	CA_FOREACH_END()
 
-	// Check if automap key is pressed by any player
-	// Toggle
-	if (IsAutoMapEnabled(gCampaign.Entry.Mode) &&
-		(KeyIsPressed(&gEventHandlers.keyboard, ConfigGetInt(&gConfig, "Input.PlayerCodes0.map")) ||
-		((cmdAll & CMD_MAP) && !(lastCmdAll & CMD_MAP))))
-	{
-		rData->isMap = !rData->isMap;
-	}
-
 	// Check if:
 	// - escape was pressed, or
 	// - window lost focus
@@ -375,6 +361,7 @@ static void RunGameInput(void *data)
 	{
 		// Pause the game
 		rData->pausingDevice = firstPausingDevice;
+		rData->isMap = false;
 	}
 	else if (pausingDevice != INPUT_DEVICE_UNSET)
 	{
@@ -392,6 +379,25 @@ static void RunGameInput(void *data)
 		{
 			// Pause the game
 			rData->pausingDevice = pausingDevice;
+			rData->isMap = false;
+		}
+	}
+
+	const bool paused =
+		rData->pausingDevice != INPUT_DEVICE_UNSET ||
+		rData->controllerUnplugged;
+	if (!paused)
+	{
+		// Check if automap key is pressed by any player
+		// Toggle
+		if (IsAutoMapEnabled(gCampaign.Entry.Mode) &&
+			(KeyIsPressed(&gEventHandlers.keyboard, ConfigGetInt(&gConfig, "Input.PlayerCodes0.map")) ||
+			((cmdAll & CMD_MAP) && !(lastCmdAll & CMD_MAP))))
+		{
+			rData->isMap = !rData->isMap;
+			SoundPlay(
+				&gSoundDevice,
+				StrSound(rData->isMap ? "map_open" : "map_close"));
 		}
 	}
 
@@ -420,6 +426,7 @@ static GameLoopResult RunGameUpdate(void *data)
 	if (!rData->m->HasBegun && MissionCanBegin())
 	{
 		GameEvent begin = GameEventNew(GAME_EVENT_GAME_BEGIN);
+		begin.u.GameBegin.MissionTime = gMission.time;
 		GameEventsEnqueue(&gGameEvents, begin);
 	}
 
@@ -484,7 +491,7 @@ static GameLoopResult RunGameUpdate(void *data)
 	// If split screen never and players are too close to the
 	// edge of the screen, forcefully pull them towards the center
 	if (ConfigGetEnum(&gConfig, "Interface.Splitscreen") == SPLITSCREEN_NEVER &&
-		GetNumPlayers(true, true, true) > 1 &&
+		GetNumPlayers(PLAYER_ALIVE_OR_DYING, true, true) > 1 &&
 		!IsPVP(gCampaign.Entry.Mode))
 	{
 		const int w = gGraphicsDevice.cachedConfig.Res.x;
@@ -499,19 +506,21 @@ static GameLoopResult RunGameUpdate(void *data)
 			const TActor *p = ActorGetByUID(pd->ActorUID);
 			const int pad = CAMERA_SPLIT_PADDING;
 			Vec2i vel = Vec2iZero();
-			if (screen.x + pad > p->tileItem.x && p->Vel.x < 256)
+			if (screen.x + pad > p->tileItem.x && p->tileItem.VelFull.x < 256)
 			{
 				vel.x = screen.x + pad - p->tileItem.x;
 			}
-			else if (screen.x + w - pad < p->tileItem.x && p->Vel.x > -256)
+			else if (screen.x + w - pad < p->tileItem.x &&
+				p->tileItem.VelFull.x > -256)
 			{
 				vel.x = screen.x + w - pad - p->tileItem.x;
 			}
-			if (screen.y + pad > p->tileItem.y && p->Vel.y < 256)
+			if (screen.y + pad > p->tileItem.y && p->tileItem.VelFull.y < 256)
 			{
 				vel.y = screen.y + pad - p->tileItem.y; 
 			}
-			else if (screen.y + h - pad < p->tileItem.y && p->Vel.y > -256)
+			else if (screen.y + h - pad < p->tileItem.y
+				&& p->tileItem.VelFull.y > -256)
 			{
 				vel.y = screen.y + h - pad - p->tileItem.y;
 			}

@@ -28,7 +28,7 @@
 */
 #pragma once
 
-#define CDOGS_SDL_VERSION "v0.6.1"
+#define CDOGS_SDL_VERSION "v0.6.5"
 
 /* where to look for the cdogs data files */
 #ifdef CDOGS_IOS

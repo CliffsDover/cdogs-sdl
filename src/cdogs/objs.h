@@ -81,7 +81,6 @@ typedef struct MobileObject
 					// (prevent self collision)
 	const BulletClass *bulletClass;
 	int x, y, z;
-	Vec2i vel;
 	int dz;
 	int count;
 	int range;
@@ -99,12 +98,13 @@ extern CArray gObjs;	// of TObject
 
 bool CanHit(const int flags, const int uid, const TTileItem *target);
 bool HasHitSound(
-	const int power, const int flags, const int playerUID,
+	const int flags, const int playerUID,
 	const TileItemKind targetKind, const int targetUID,
 	const special_damage_e special, const bool allowFriendlyHitSound);
 void Damage(
 	const Vec2i hitVector,
 	const int power,
+	const double mass,
 	const int flags, const int playerUID, const int uid,
 	const TileItemKind targetKind, const int targetUID,
 	const special_damage_e special);
@@ -112,9 +112,6 @@ void Damage(
 void ObjsInit(void);
 void ObjsTerminate(void);
 int ObjsGetNextUID(void);
-void AddObjectOld(
-	const Vec2i pos, const Vec2i size,
-	const TOffsetPic *pic, const int tileFlags);
 void ObjAdd(const NMapObjectAdd amo);
 void ObjRemove(const NMapObjectRemove mor);
 void ObjDestroy(TObject *o);

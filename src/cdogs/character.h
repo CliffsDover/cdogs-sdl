@@ -46,7 +46,7 @@ typedef struct
 	int speed;
 	const GunDescription *Gun;
 	int maxHealth;
-	int flags;
+	unsigned int flags;
 	CharColors Colors;
 	CharBot *bot;
 } Character;
@@ -64,6 +64,8 @@ typedef struct
 void CharacterStoreInit(CharacterStore *store);
 void CharacterStoreTerminate(CharacterStore *store);
 void CharacterStoreResetOthers(CharacterStore *store);
+void CharacterLoadJSON(CharacterStore *c, json_t *root, int version);
+bool CharacterSave(CharacterStore *s, const char *path);
 Character *CharacterStoreAddOther(CharacterStore *store);
 Character *CharacterStoreInsertOther(CharacterStore *store, int idx);
 void CharacterStoreDeleteOther(CharacterStore *store, int idx);

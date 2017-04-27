@@ -2,7 +2,7 @@
 	C-Dogs SDL
 	A port of the legendary (and fun) action/arcade cdogs.
 
-	Copyright (c) 2016 Cong Xu
+	Copyright (c) 2016-2017 Cong Xu
 	All rights reserved.
 
 	Redistribution and use in source and binary forms, with or without
@@ -30,14 +30,19 @@
 
 #include "cpic.h"
 #include "defs.h"
+#include "draw/char_sprites.h"
 #include "json/json.h"
 
 
 typedef struct
 {
 	char *Name;
-	CPic IdlePics;
-	CPic *FiringPics;
+	CPic HeadPics;
+	const CharSprites *Sprites;
+	struct
+	{
+		char *Aargh;
+	} Sounds;
 } CharacterClass;
 typedef struct
 {
@@ -49,6 +54,8 @@ extern CharacterClasses gCharacterClasses;
 const CharacterClass *StrCharacterClass(const char *s);
 // Legacy character class from "face" index
 const CharacterClass *IntCharacterClass(const int face);
+const CharacterClass *IndexCharacterClass(const int i);
+int CharacterClassIndex(const CharacterClass *c);
 
 void CharacterClassesInitialize(CharacterClasses *c, const char *filename);
 void CharacterClassesLoadJSON(CArray *classes, json_t *root);

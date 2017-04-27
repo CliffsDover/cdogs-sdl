@@ -1,7 +1,7 @@
 /*
     C-Dogs SDL
     A port of the legendary (and fun) action/arcade cdogs.
-    Copyright (c) 2014-2016, Cong Xu
+    Copyright (c) 2014-2017 Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,7 @@
 */
 #include "particle.h"
 
-#include "collision.h"
+#include "collision/collision.h"
 #include "game_events.h"
 #include "json_utils.h"
 #include "log.h"
@@ -208,13 +208,23 @@ void ParticlesUpdate(CArray *particles, const int ticks)
 }
 
 
+typedef struct
+{
+	const TTileItem *Obj;
+	Vec2i ColPos;
+	Vec2i ColNormal;
+	int ColPosDistRealSquared;
+} HitWallData;
+static bool CheckWall(const Vec2i tilePos);
+static bool HitWallFunc(
+	const Vec2i tilePos, void *data, const Vec2i col, const Vec2i normal);
 static bool ParticleUpdate(Particle *p, const int ticks)
 {
 	p->Count += ticks;
 	const Vec2i startPos = p->Pos;
 	for (int i = 0; i < ticks; i++)
 	{
-		p->Pos = Vec2iAdd(p->Pos, p->Vel);
+		p->Pos = Vec2iAdd(p->Pos, p->tileItem.VelFull);
 		p->Z += p->DZ;
 		if (p->Class->GravityFactor != 0)
 		{
@@ -236,27 +246,36 @@ static bool ParticleUpdate(Particle *p, const int ticks)
 			}
 			if (p->DZ == 0 && p->Z == 0)
 			{
-				p->Vel = Vec2iZero();
+				p->tileItem.VelFull = Vec2iZero();
 				p->Spin = 0;
-				// Set as wreck so that it gets drawn last
-				p->tileItem.flags |= TILEITEM_IS_WRECK;
+				// Fell to ground, draw last
+				p->tileItem.flags |= TILEITEM_DRAW_LAST;
 			}
 		}
 	}
-	if (p->Class->HitsWalls)
+	// Wall collision, bounce off walls
+	if (!Vec2iIsZero(p->tileItem.VelFull) && p->Class->HitsWalls)
 	{
-		const Vec2i realPos = Vec2iFull2Real(p->Pos);
-		const bool hitWall =
-			MapIsRealPosIn(&gMap, realPos) && ShootWall(realPos.x, realPos.y);
-		if (hitWall)
+		const CollisionParams params =
+		{
+			0, COLLISIONTEAM_NONE, IsPVP(gCampaign.Entry.Mode)
+		};
+		HitWallData data = { &p->tileItem, Vec2iZero(), Vec2iZero(), -1 };
+		OverlapTileItems(
+			&p->tileItem, startPos,
+			p->tileItem.size, params, NULL, NULL,
+			CheckWall, HitWallFunc, &data);
+		if (data.ColPosDistRealSquared >= 0)
 		{
 			if (p->Class->WallBounces)
 			{
-				p->Pos = GetWallBounceFullPos(startPos, p->Pos, &p->Vel);
+				GetWallBouncePosVelFull(
+					startPos, p->tileItem.VelFull, data.ColPos, data.ColNormal,
+					&p->Pos, &p->tileItem.VelFull);
 			}
 			else
 			{
-				p->Vel = Vec2iZero();
+				p->tileItem.VelFull = Vec2iZero();
 			}
 		}
 	}
@@ -279,6 +298,34 @@ static bool ParticleUpdate(Particle *p, const int ticks)
 	}
 
 	return p->Count <= p->Range;
+}
+static void SetClosestCollision(
+	HitWallData *data, const Vec2i col, const Vec2i normal);
+static bool CheckWall(const Vec2i tilePos)
+{
+	const Tile *t = MapGetTile(&gMap, tilePos);
+	return t == NULL || t->flags & MAPTILE_NO_SHOOT;
+}
+static bool HitWallFunc(
+	const Vec2i tilePos, void *data, const Vec2i col, const Vec2i normal)
+{
+	UNUSED(tilePos);
+	HitWallData *hData = data;
+	SetClosestCollision(hData, col, normal);
+	return true;
+}
+static void SetClosestCollision(
+	HitWallData *data, const Vec2i col, const Vec2i normal)
+{
+	// Choose the best collision point (i.e. closest to origin)
+	const int d2 = DistanceSquared(
+		Vec2iFull2Real(col), Vec2iNew(data->Obj->x, data->Obj->y));
+	if (data->ColPosDistRealSquared < 0 || d2 < data->ColPosDistRealSquared)
+	{
+		data->ColPos = col;
+		data->ColPosDistRealSquared = d2;
+		data->ColNormal = normal;
+	}
 }
 
 static void DrawParticle(const Vec2i pos, const TileItemDrawFuncData *data);
@@ -310,12 +357,12 @@ int ParticleAdd(CArray *particles, const AddParticle add)
 	p->Pos = add.FullPos;
 	p->Z = add.Z;
 	p->Angle = add.Angle;
-	p->Vel = add.Vel;
 	p->DZ = add.DZ;
 	p->Spin = add.Spin;
 	p->Range = RAND_INT(add.Class->RangeLow, add.Class->RangeHigh);
 	p->isInUse = true;
 	p->tileItem.x = p->tileItem.y = -1;
+	p->tileItem.VelFull = add.Vel;
 	p->tileItem.kind = KIND_PARTICLE;
 	p->tileItem.id = i;
 	p->tileItem.drawFunc = DrawParticle;

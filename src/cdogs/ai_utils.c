@@ -51,7 +51,7 @@
 #include <assert.h>
 
 #include "algorithms.h"
-#include "collision.h"
+#include "collision/collision.h"
 #include "gamedata.h"
 #include "map.h"
 #include "objs.h"
@@ -260,9 +260,9 @@ bool IsTileWalkableAroundObjects(Map *map, const Vec2i pos)
 	CA_FOREACH(ThingId, tid, t->things)
 		if (tid->Kind == KIND_OBJECT)
 		{
-			// Check that the object is not debris
+			// Check that the object has hitbox - i.e. health > 0
 			const TObject *o = CArrayGet(&gObjs, tid->Id);
-			if (!TileItemIsDebris(&o->tileItem))
+			if (o->Health > 0)
 			{
 				return false;
 			}
@@ -380,12 +380,13 @@ TObject *AIGetObjectRunningInto(TActor *a, int cmd)
 	{
 		frontPos.y++;
 	}
-	item = CollideGetFirstItem(
-		&a->tileItem,
-		frontPos,
-		TILEITEM_IMPASSABLE,
-		CalcCollisionTeam(1, a),
-		IsPVP(gCampaign.Entry.Mode));
+	const CollisionParams params =
+	{
+		TILEITEM_IMPASSABLE, CalcCollisionTeam(true, a),
+		IsPVP(gCampaign.Entry.Mode)
+	};
+	item = OverlapGetFirstItem(
+		&a->tileItem, Vec2iReal2Full(frontPos), a->tileItem.size, params);
 	if (!item || item->kind != KIND_OBJECT)
 	{
 		return NULL;
@@ -577,9 +578,7 @@ int AIGoto(TActor *actor, Vec2i p, bool ignoreObjects)
 // Those in slice A will move down-left and those in slice B will move left.
 int AIHunt(TActor *actor, Vec2i targetPos)
 {
-	Vec2i fullPos = Vec2iAdd(
-		actor->Pos,
-		GunGetMuzzleOffset(ActorGetGun(actor)->Gun, actor->direction));
+	const Vec2i fullPos = Vec2iAdd(actor->Pos, ActorGetGunMuzzleOffset(actor));
 	const int dx = abs(targetPos.x - fullPos.x);
 	const int dy = abs(targetPos.y - fullPos.y);
 
@@ -641,9 +640,7 @@ int AIRetreatFrom(TActor *actor, const Vec2i from)
 // Those in slice A will move left and those in slice B will move down-left.
 int AITrack(TActor *actor, const Vec2i targetPos)
 {
-	const Vec2i fullPos = Vec2iAdd(
-		actor->Pos,
-		GunGetMuzzleOffset(ActorGetGun(actor)->Gun, actor->direction));
+	const Vec2i fullPos = Vec2iAdd(actor->Pos, ActorGetGunMuzzleOffset(actor));
 	const int dx = abs(targetPos.x - fullPos.x);
 	const int dy = abs(targetPos.y - fullPos.y);
 

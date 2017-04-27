@@ -22,7 +22,7 @@
     This file incorporates work covered by the following copyright and
     permission notice:
 
-    Copyright (c) 2013-2014, 2016 Cong Xu
+    Copyright (c) 2013-2014, 2016-2017 Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -57,29 +57,22 @@
 Tile TileNone(void)
 {
 	Tile t;
-	memset(&t, 0, sizeof t);
-	t.pic = NULL;
+	TileInit(&t);
 	t.flags = MAPTILE_NO_WALK | MAPTILE_IS_NOTHING;
 	return t;
 }
 void TileInit(Tile *t)
 {
 	memset(t, 0, sizeof *t);
-	// lazy initialise the arrays of triggers
-	// it's very slow to do 128x128 mallocs!
+	CArrayInit(&t->triggers, sizeof(Trigger *));
+	CArrayInit(&t->things, sizeof(ThingId));
 	t->pic = NULL;
 	t->picAlt = NULL;
 }
 void TileDestroy(Tile *t)
 {
-	if (t->triggers.elemSize > 0)
-	{
-		CArrayTerminate(&t->triggers);
-	}
-	if (t->things.elemSize > 0)
-	{
-		CArrayTerminate(&t->things);
-	}
+	CArrayTerminate(&t->triggers);
+	CArrayTerminate(&t->things);
 }
 
 bool IsTileItemInsideTile(TTileItem *i, Vec2i tilePos)
@@ -99,15 +92,14 @@ bool TileCanWalk(const Tile *t)
 {
 	return !(t->flags & MAPTILE_NO_WALK);
 }
-bool TileIsNormalFloor(Tile *t)
+bool TileIsNormalFloor(const Tile *t)
 {
 	return t->flags & MAPTILE_IS_NORMAL_FLOOR;
 }
-bool TileIsClear(Tile *t)
+bool TileIsClear(const Tile *t)
 {
 	// Check if tile is normal floor
-	const int normalFloorFlags =
-		MAPTILE_IS_NORMAL_FLOOR | MAPTILE_IS_DRAINAGE | MAPTILE_OFFSET_PIC;
+	const int normalFloorFlags = MAPTILE_IS_NORMAL_FLOOR | MAPTILE_OFFSET_PIC;
 	if (t->flags & ~normalFloorFlags) return false;
 	// Check if tile has no things on it, excluding particles
 	CA_FOREACH(const ThingId, tid, t->things)
@@ -135,10 +127,11 @@ void TileSetAlternateFloor(Tile *t, NamedPic *p)
 void TileItemUpdate(TTileItem *t, const int ticks)
 {
 	t->SoundLock = MAX(0, t->SoundLock - ticks);
+	CPicUpdate(&t->CPic, ticks);
 }
 
 
-TTileItem *ThingIdGetTileItem(ThingId *tid)
+TTileItem *ThingIdGetTileItem(const ThingId *tid)
 {
 	TTileItem *ti = NULL;
 	switch (tid->Kind)
@@ -166,7 +159,7 @@ TTileItem *ThingIdGetTileItem(ThingId *tid)
 	return ti;
 }
 
-bool TileItemIsDebris(const TTileItem *t)
+bool TileItemDrawLast(const TTileItem *t)
 {
-	return t->flags & TILEITEM_IS_WRECK;
+	return t->flags & TILEITEM_DRAW_LAST;
 }

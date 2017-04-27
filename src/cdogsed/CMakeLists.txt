@@ -3,11 +3,10 @@ include_directories(
 	${SDL2_IMAGE_INCLUDE_DIRS}
 	${SDL2_MIXER_INCLUDE_DIRS})
 set(CDOGSED_SOURCES
-	charsed.c
+	char_editor.c
 	editor_brush.c
 	editor_ui.c
 	editor_ui_cave.c
-	editor_ui_chared.c
 	editor_ui_color.c
 	editor_ui_common.c
 	editor_ui_objectives.c
@@ -16,11 +15,10 @@ set(CDOGSED_SOURCES
 	editor_ui_weapons.c
 	ui_object.c)
 set(CDOGSED_HEADERS
-	charsed.h
+	char_editor.h
 	editor_brush.h
 	editor_ui.h
 	editor_ui_cave.h
-	editor_ui_chared.h
 	editor_ui_color.h
 	editor_ui_common.h
 	editor_ui_objectives.h

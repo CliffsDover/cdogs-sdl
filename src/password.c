@@ -90,7 +90,8 @@ const char *MakePassword(int mission, int isTwoPlayers)
 		sum2 ^= gCampaign.Setting.Title[i];
 	}
 
-	x = ((sum2 << 23) | (mission << 16) | sum1) ^ gCampaign.seed;
+	const int seed = ConfigGetInt(&gConfig, "Game.RandomSeed");
+	x = ((sum2 << 23) | (mission << 16) | sum1) ^ (size_t)seed;
 	count = 0;
 	while (x > 0 && count < PASSWORD_MAX) {
 		i = x % base;
@@ -185,8 +186,7 @@ static GameLoopResult EnterCodeScreenUpdate(void *data)
 	if (eData->Mission == 0)
 	{
 		// Password doesn't work; play a bad sound
-		SoundPlay(
-			&gSoundDevice, SoundGetRandomScream(&gSoundDevice));
+		SoundPlay(&gSoundDevice, StrSound("aargh/man"));
 		return UPDATE_RESULT_OK;
 	}
 
@@ -218,7 +218,7 @@ static bool PasswordEntry(EnterCodeScreenData *data, const int cmd)
 		else
 		{
 			// Too many letters entered
-			SoundPlay(&gSoundDevice, SoundGetRandomScream(&gSoundDevice));
+			SoundPlay(&gSoundDevice, StrSound("aargh/man"));
 		}
 	}
 	else if (cmd & CMD_BUTTON2)
@@ -232,7 +232,7 @@ static bool PasswordEntry(EnterCodeScreenData *data, const int cmd)
 		else
 		{
 			// No letters to delete
-			SoundPlay(&gSoundDevice, SoundGetRandomScream(&gSoundDevice));
+			SoundPlay(&gSoundDevice, StrSound("aargh/man"));
 		}
 	}
 	else if (cmd & CMD_LEFT)
@@ -275,7 +275,7 @@ static void EnterCodeScreenDraw(void *data)
 {
 	const EnterCodeScreenData *eData = data;
 
-	GraphicsBlitBkg(&gGraphicsDevice);
+	GraphicsClear(&gGraphicsDevice);
 
 	// Password display
 	Vec2i pos = Vec2iNew(

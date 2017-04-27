@@ -53,7 +53,7 @@
 
 #include "actor_placement.h"
 #include "ai_utils.h"
-#include "collision.h"
+#include "collision/collision.h"
 #include "config.h"
 #include "defs.h"
 #include "actors.h"
@@ -135,10 +135,13 @@ static bool IsPosOK(TActor *actor, Vec2i pos)
 	{
 		return false;
 	}
-	if (CollideGetFirstItem(
-		&actor->tileItem, realPos, TILEITEM_IMPASSABLE,
-		CalcCollisionTeam(1, actor),
-		IsPVP(gCampaign.Entry.Mode)))
+	const CollisionParams params =
+	{
+		TILEITEM_IMPASSABLE, CalcCollisionTeam(true, actor),
+		IsPVP(gCampaign.Entry.Mode)
+	};
+	if (OverlapGetFirstItem(
+		&actor->tileItem, pos, actor->tileItem.size, params))
 	{
 		return false;
 	}
@@ -495,7 +498,7 @@ void CommandBadGuys(int ticks)
 		const Character *c =
 			CArrayGet(&gCampaign.Setting.characters.OtherChars, aa.CharId);
 		aa.Health = CharacterGetStartingHealth(c, true);
-		aa.FullPos = PlaceAwayFromPlayers(&gMap);
+		aa.FullPos = PlaceAwayFromPlayers(&gMap, true);
 		GameEvent e = GameEventNew(GAME_EVENT_ACTOR_ADD);
 		e.u.ActorAdd = aa;
 		GameEventsEnqueue(&gGameEvents, e);
@@ -544,7 +547,7 @@ void InitializeBadGuys(void)
 				const Character *c =
 					CArrayGet(&gCampaign.Setting.characters.OtherChars, aa.CharId);
 				aa.Health = CharacterGetStartingHealth(c, true);
-				aa.FullPos = PlaceAwayFromPlayers(&gMap);
+				aa.FullPos = PlaceAwayFromPlayers(&gMap, false);
 				GameEvent e = GameEventNew(GAME_EVENT_ACTOR_ADD);
 				e.u.ActorAdd = aa;
 				GameEventsEnqueue(&gGameEvents, e);
@@ -572,7 +575,7 @@ void InitializeBadGuys(void)
 				}
 				else
 				{
-					aa.FullPos = PlaceAwayFromPlayers(&gMap);
+					aa.FullPos = PlaceAwayFromPlayers(&gMap, false);
 				}
 				GameEvent e = GameEventNew(GAME_EVENT_ACTOR_ADD);
 				e.u.ActorAdd = aa;
@@ -604,7 +607,7 @@ void CreateEnemies(void)
 		aa.UID = ActorsGetNextUID();
 		aa.CharId = CharacterStoreGetRandomBaddieId(
 			&gCampaign.Setting.characters);
-		aa.FullPos = PlaceAwayFromPlayers(&gMap);
+		aa.FullPos = PlaceAwayFromPlayers(&gMap, true);
 		aa.Direction = rand() % DIRECTION_COUNT;
 		const Character *c =
 			CArrayGet(&gCampaign.Setting.characters.OtherChars, aa.CharId);

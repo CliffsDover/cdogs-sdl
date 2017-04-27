@@ -22,7 +22,7 @@
     This file incorporates work covered by the following copyright and
     permission notice:
 
-    Copyright (c) 2013-2014, Cong Xu
+    Copyright (c) 2013-2014, 2017 Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -103,20 +103,6 @@ void MapSetupTilesAndWalls(Map *map, const Mission *m)
 		for (v.y = 0; v.y < map->Size.y; v.y++)
 		{
 			MapSetupTile(map, v, m);
-		}
-	}
-
-	// Randomly change normal floor tiles to drainage tiles
-	for (int i = 0; i < map->Size.x*map->Size.y / 45; i++)
-	{
-		// Make sure drain tiles aren't next to each other
-		Tile *t = MapGetTile(map, Vec2iNew(
-			(rand() % map->Size.x) & 0xFFFFFE,
-			(rand() % map->Size.y) & 0xFFFFFE));
-		if (TileIsNormalFloor(t))
-		{
-			TileSetAlternateFloor(t, PicManagerGetRandomDrain(&gPicManager));
-			t->flags |= MAPTILE_IS_DRAINAGE;
 		}
 	}
 
@@ -288,6 +274,11 @@ int MapIsValidStartForWall(
 	return 1;
 }
 
+Vec2i MapGetRandomTile(const Map *map)
+{
+	return Vec2iNew(rand() % map->Size.x, rand() % map->Size.y);
+}
+
 void MapMakeRoom(Map *map, int xOrigin, int yOrigin, int width, int height)
 {
 	int x, y;
@@ -427,16 +418,19 @@ static bool TryPlaceDoorTile(
 	return false;
 }
 
+bool MapIsAreaInside(const Map *map, const Vec2i pos, const Vec2i size)
+{
+	return pos.x >= 0 && pos.y >= 0 &&
+		pos.x + size.x < map->Size.x && pos.y + size.y < map->Size.y;
+}
+
 int MapIsAreaClear(Map *map, Vec2i pos, Vec2i size)
 {
-	Vec2i v;
-
-	if (pos.x < 0 || pos.y < 0 ||
-		pos.x + size.x >= map->Size.x || pos.y + size.y >= map->Size.y)
+	if (!MapIsAreaInside(map, pos, size))
 	{
 		return 0;
 	}
-
+	Vec2i v;
 	for (v.y = pos.y; v.y < pos.y + size.y; v.y++)
 	{
 		for (v.x = pos.x; v.x < pos.x + size.x; v.x++)

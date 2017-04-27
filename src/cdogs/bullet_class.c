@@ -22,7 +22,7 @@
     This file incorporates work covered by the following copyright and
     permission notice:
 
-    Copyright (c) 2013-2016, Cong Xu
+    Copyright (c) 2013-2017, Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -51,8 +51,8 @@
 #include <math.h>
 
 #include "ai_utils.h"
-#include "collision.h"
-#include "drawtools.h"
+#include "collision/collision.h"
+#include "draw/drawtools.h"
 #include "game_events.h"
 #include "json_utils.h"
 #include "log.h"
@@ -95,7 +95,8 @@ static CPicDrawContext GetBulletDrawContext(const int id)
 	const TMobileObject *obj = CArrayGet(&gMobObjs, id);
 	CASSERT(obj->isInUse, "Cannot draw non-existent mobobj");
 	// Calculate direction based on velocity
-	const direction_e dir = RadiansToDirection(Vec2iToRadians(obj->vel));
+	const direction_e dir =
+		RadiansToDirection(Vec2iToRadians(obj->tileItem.VelFull));
 	const Pic *pic = CPicGetPic(&obj->tileItem.CPic, dir);
 	CPicDrawContext c;
 	c.Dir = dir;
@@ -135,9 +136,15 @@ static Vec2i SeekTowards(
 
 
 static void FireGuns(const TMobileObject *obj, const CArray *guns);
-static HitType HitItem(
+typedef struct
+{
+	HitType Type;
+	Vec2i Pos;
+	Vec2i Normal;
+} HitResult;
+static HitResult HitItem(
 	TMobileObject *obj, const Vec2i pos, const bool multipleHits);
-bool UpdateBullet(TMobileObject *obj, const int ticks)
+bool UpdateBullet(struct MobileObject *obj, const int ticks)
 {
 	TileItemUpdate(&obj->tileItem, ticks);
 	obj->count += ticks;
@@ -153,10 +160,18 @@ bool UpdateBullet(TMobileObject *obj, const int ticks)
 		{
 			FireGuns(obj, &obj->bulletClass->OutOfRangeGuns);
 		}
+		if (obj->bulletClass->OutOfRangeSpark != NULL)
+		{
+			GameEvent s = GameEventNew(GAME_EVENT_ADD_PARTICLE);
+			s.u.AddParticle.Class = obj->bulletClass->OutOfRangeSpark;
+			s.u.AddParticle.FullPos = Vec2iNew(obj->x, obj->y);
+			s.u.AddParticle.Z = obj->z;
+			GameEventsEnqueue(&gGameEvents, s);
+		}
 		return false;
 	}
 
-	const Vec2i objPos = Vec2iNew(obj->x, obj->y);
+	const Vec2i posStart = Vec2iNew(obj->x, obj->y);
 
 	if (obj->bulletClass->SeekFactor > 0)
 	{
@@ -166,25 +181,65 @@ bool UpdateBullet(TMobileObject *obj, const int ticks)
 		{
 			return false;
 		}
-		const TActor *target = AIGetClosestEnemy(objPos, owner, obj->flags);
+		const TActor *target = AIGetClosestEnemy(posStart, owner, obj->flags);
 		if (target && !target->dead)
 		{
 			for (int i = 0; i < ticks; i++)
 			{
-				obj->vel = SeekTowards(
-					objPos, obj->vel,
+				obj->tileItem.VelFull = SeekTowards(
+					posStart, obj->tileItem.VelFull,
 					obj->bulletClass->SpeedLow, target->Pos,
 					obj->bulletClass->SeekFactor);
 			}
 		}
 	}
 
-	Vec2i pos = Vec2iScale(Vec2iAdd(objPos, obj->vel), ticks);
-	HitType hitItem = HIT_NONE;
+	HitResult hit = { HIT_NONE, Vec2iZero(), Vec2iZero() };
 	if (!gCampaign.IsClient)
 	{
-		hitItem = HitItem(obj, pos, obj->bulletClass->Persists);
+		hit = HitItem(obj, posStart, obj->bulletClass->Persists);
 	}
+	Vec2i pos =
+		Vec2iScale(Vec2iAdd(posStart, obj->tileItem.VelFull), ticks);
+
+	if (hit.Type != HIT_NONE)
+	{
+		GameEvent b = GameEventNew(GAME_EVENT_BULLET_BOUNCE);
+		b.u.BulletBounce.UID = obj->UID;
+		b.u.BulletBounce.HitType = (int)hit.Type;
+		bool alive = true;
+		if ((hit.Type == HIT_WALL && !obj->bulletClass->WallBounces) ||
+			((hit.Type == HIT_OBJECT || hit.Type == HIT_FLESH) &&
+				obj->bulletClass->HitsObjects))
+		{
+			b.u.BulletBounce.Spark = true;
+			CASSERT(!gCampaign.IsClient, "Cannot process bounces as client");
+			FireGuns(obj, &obj->bulletClass->HitGuns);
+			if (hit.Type == HIT_WALL || !obj->bulletClass->Persists)
+			{
+				alive = false;
+			}
+		}
+		const Vec2i hitPos = hit.Type != HIT_NONE ? hit.Pos : pos;
+		b.u.BulletBounce.BouncePos = Vec2i2Net(hitPos);
+		b.u.BulletBounce.Pos = Vec2i2Net(pos);
+		b.u.BulletBounce.Vel = Vec2i2Net(obj->tileItem.VelFull);
+		if (hit.Type == HIT_WALL && !Vec2iIsZero(obj->tileItem.VelFull))
+		{
+			// Bouncing
+			GetWallBouncePosVelFull(
+				posStart, obj->tileItem.VelFull, hit.Pos, hit.Normal,
+				&pos, &obj->tileItem.VelFull);
+			b.u.BulletBounce.Pos = Vec2i2Net(pos);
+			b.u.BulletBounce.Vel = Vec2i2Net(obj->tileItem.VelFull);
+		}
+		GameEventsEnqueue(&gGameEvents, b);
+		if (!alive)
+		{
+			return false;
+		}
+	}
+
 	const Vec2i realPos = Vec2iFull2Real(pos);
 
 	// Falling (grenades)
@@ -233,76 +288,29 @@ bool UpdateBullet(TMobileObject *obj, const int ticks)
 	}
 	
 	// Friction
-	const bool isDiagonal = obj->vel.x != 0 && obj->vel.y != 0;
-	int frictionComponent = isDiagonal ?
+	const bool isDiagonal =
+		obj->tileItem.VelFull.x != 0 && obj->tileItem.VelFull.y != 0;
+	const int frictionComponent = isDiagonal ?
 		(int)round(obj->bulletClass->Friction / sqrt(2)) :
 		obj->bulletClass->Friction;
 	for (int i = 0; i < ticks; i++)
 	{
-		if (obj->vel.x > 0)
+		if (obj->tileItem.VelFull.x > 0)
 		{
-			obj->vel.x -= frictionComponent;
+			obj->tileItem.VelFull.x -= frictionComponent;
 		}
-		else if (obj->vel.x < 0)
+		else if (obj->tileItem.VelFull.x < 0)
 		{
-			obj->vel.x += frictionComponent;
+			obj->tileItem.VelFull.x += frictionComponent;
 		}
 
-		if (obj->vel.y > 0)
+		if (obj->tileItem.VelFull.y > 0)
 		{
-			obj->vel.y -= frictionComponent;
+			obj->tileItem.VelFull.y -= frictionComponent;
 		}
-		else if (obj->vel.y < 0)
+		else if (obj->tileItem.VelFull.y < 0)
 		{
-			obj->vel.y += frictionComponent;
-		}
-	}
-
-	bool hitWall = false;
-	if (!gCampaign.IsClient && hitItem == HIT_NONE)
-	{
-		hitWall =
-			MapIsRealPosIn(&gMap, realPos) && ShootWall(realPos.x, realPos.y);
-	}
-	if (hitWall || hitItem != HIT_NONE)
-	{
-		GameEvent b = GameEventNew(GAME_EVENT_BULLET_BOUNCE);
-		b.u.BulletBounce.UID = obj->UID;
-		if (hitWall && !Vec2iIsZero(obj->vel))
-		{
-			b.u.BulletBounce.HitType = (int)HIT_WALL;
-		}
-		else
-		{
-			b.u.BulletBounce.HitType = (int)hitItem;
-		}
-		bool alive = true;
-		if ((hitWall && !obj->bulletClass->WallBounces) ||
-			((hitItem != HIT_NONE) && obj->bulletClass->HitsObjects))
-		{
-			b.u.BulletBounce.Spark = true;
-			CASSERT(!gCampaign.IsClient, "Cannot process bounces as client");
-			FireGuns(obj, &obj->bulletClass->HitGuns);
-			if (hitWall || !obj->bulletClass->Persists)
-			{
-				alive = false;
-			}
-		}
-		b.u.BulletBounce.BouncePos = Vec2i2Net(pos);
-		b.u.BulletBounce.BounceVel = Vec2i2Net(obj->vel);
-		if (hitWall && !Vec2iIsZero(obj->vel))
-		{
-			// Bouncing
-			Vec2i bounceVel = obj->vel;
-			pos = GetWallBounceFullPos(objPos, pos, &bounceVel);
-			b.u.BulletBounce.BouncePos = Vec2i2Net(pos);
-			b.u.BulletBounce.BounceVel = Vec2i2Net(bounceVel);
-			obj->vel = bounceVel;
-		}
-		GameEventsEnqueue(&gGameEvents, b);
-		if (!alive)
-		{
-			return false;
+			obj->tileItem.VelFull.y += frictionComponent;
 		}
 	}
 	if (!MapTryMoveTileItem(&gMap, &obj->tileItem, realPos))
@@ -317,8 +325,8 @@ bool UpdateBullet(TMobileObject *obj, const int ticks)
 	{
 		for (int i = 0; i < ticks; i++)
 		{
-			obj->vel.x += ((rand() % 3) - 1) * 128;
-			obj->vel.y += ((rand() % 3) - 1) * 128;
+			obj->tileItem.VelFull.x += ((rand() % 3) - 1) * 128;
+			obj->tileItem.VelFull.y += ((rand() % 3) - 1) * 128;
 		}
 	}
 
@@ -356,7 +364,7 @@ bool UpdateBullet(TMobileObject *obj, const int ticks)
 static void FireGuns(const TMobileObject *obj, const CArray *guns)
 {
 	const Vec2i fullPos = Vec2iNew(obj->x, obj->y);
-	const double angle = Vec2iToRadians(obj->vel);
+	const double angle = Vec2iToRadians(obj->tileItem.VelFull);
 	for (int i = 0; i < (int)guns->size; i++)
 	{
 		const GunDescription **g = CArrayGet(guns, i);
@@ -370,78 +378,100 @@ typedef struct
 	HitType HitType;
 	bool MultipleHits;
 	TMobileObject *Obj;
+	union
+	{
+		TTileItem *Target;
+		Vec2i TilePos;
+	} u;
+	Vec2i ColPos;
+	Vec2i ColNormal;
+	int ColPosDistRealSquared;
 } HitItemData;
-static bool HitItemFunc(TTileItem *ti, void *data);
-static HitType HitItem(
+static bool HitItemFunc(
+	TTileItem *ti, void *data, const Vec2i colA, const Vec2i colB,
+	const Vec2i normal);
+static bool CheckWall(const Vec2i tilePos);
+static bool HitWallFunc(
+	const Vec2i tilePos, void *data, const Vec2i col, const Vec2i normal);
+static void OnHit(HitItemData *data, TTileItem *target);
+static HitResult HitItem(
 	TMobileObject *obj, const Vec2i pos, const bool multipleHits)
 {
-	// Don't hit if no damage dealt
-	// This covers non-damaging debris explosions
-	if (obj->bulletClass->Power <= 0 &&
-		(obj->specialLock > 0 || obj->bulletClass->Special == SPECIAL_NONE))
-	{
-		return HIT_NONE;
-	}
-
 	// Get all items that collide
 	HitItemData data;
 	data.HitType = HIT_NONE;
 	data.MultipleHits = multipleHits;
 	data.Obj = obj;
-	CollideTileItems(
-		&obj->tileItem, Vec2iFull2Real(pos),
-		TILEITEM_CAN_BE_SHOT, COLLISIONTEAM_NONE,
-		IsPVP(gCampaign.Entry.Mode),
-		HitItemFunc, &data);
-	return data.HitType;
+	data.ColPos = pos;
+	data.ColNormal = Vec2iZero();
+	data.ColPosDistRealSquared = -1;
+	const CollisionParams params =
+	{
+		TILEITEM_CAN_BE_SHOT, COLLISIONTEAM_NONE, IsPVP(gCampaign.Entry.Mode)
+	};
+	OverlapTileItems(
+		&obj->tileItem, pos,
+		obj->tileItem.size, params, HitItemFunc, &data,
+		CheckWall, HitWallFunc, &data);
+	if (!multipleHits && data.ColPosDistRealSquared >= 0)
+	{
+		if (data.HitType == HIT_OBJECT || data.HitType == HIT_FLESH)
+		{
+			OnHit(&data, data.u.Target);
+		}
+	}
+	HitResult hit = { data.HitType, data.ColPos, data.ColNormal };
+	return hit;
 }
 static HitType GetHitType(
 	const TTileItem *ti, const TMobileObject *bullet, int *targetUID);
-static bool HitItemFunc(TTileItem *ti, void *data)
+static void SetClosestCollision(
+	HitItemData *data, const Vec2i col, const Vec2i normal, HitType ht,
+	TTileItem *target, const Vec2i tilePos);
+static bool HitItemFunc(
+	TTileItem *ti, void *data, const Vec2i colA, const Vec2i colB,
+	const Vec2i normal)
 {
+	UNUSED(colB);
 	HitItemData *hData = data;
+
+	// Check bullet-to-other collisions
 	if (!CanHit(hData->Obj->flags, hData->Obj->ActorUID, ti))
 	{
 		goto bail;
 	}
-	int targetUID = -1;
-	hData->HitType = GetHitType(ti, hData->Obj, &targetUID);
-	Damage(
-		hData->Obj->vel, hData->Obj->bulletClass->Power,
-		hData->Obj->flags, hData->Obj->PlayerUID, hData->Obj->ActorUID,
-		ti->kind, targetUID,
-		hData->Obj->bulletClass->Special);
-	if (hData->Obj->tileItem.SoundLock <= 0)
+
+	// If we can hit multiple targets, just process those hits immediately
+	// Otherwise, find the closest target and only process the hit for that one
+	// at the end.
+	if (hData->MultipleHits)
 	{
-		hData->Obj->tileItem.SoundLock += SOUND_LOCK_TILE_OBJECT;
+		OnHit(hData, ti);
 	}
-	if (ti->SoundLock <= 0)
+	else
 	{
-		ti->SoundLock += SOUND_LOCK_TILE_OBJECT;
-	}
-	if (hData->Obj->specialLock <= 0)
-	{
-		hData->Obj->specialLock += SPECIAL_LOCK;
+		SetClosestCollision(
+			hData, colA, normal, GetHitType(ti, hData->Obj, NULL),
+			ti, Vec2iZero());
 	}
 
 bail:
-	// Whether to produce multiple hits from the same TMobileObject
-	return hData->MultipleHits;
+	return true;
 }
 static HitType GetHitType(
 	const TTileItem *ti, const TMobileObject *bullet, int *targetUID)
 {
-	*targetUID = -1;
+	int tUID = -1;
 	HitType ht = HIT_NONE;
 	switch (ti->kind)
 	{
 	case KIND_CHARACTER:
 		ht = HIT_FLESH;
-		*targetUID = ((const TActor *)CArrayGet(&gActors, ti->id))->uid;
+		tUID = ((const TActor *)CArrayGet(&gActors, ti->id))->uid;
 		break;
 	case KIND_OBJECT:
 		ht = HIT_OBJECT;
-		*targetUID = ((const TObject *)CArrayGet(&gObjs, ti->id))->uid;
+		tUID = ((const TObject *)CArrayGet(&gObjs, ti->id))->uid;
 		break;
 	default:
 		CASSERT(false, "cannot damage target kind");
@@ -449,19 +479,84 @@ static HitType GetHitType(
 	}
 	if (bullet->tileItem.SoundLock > 0 ||
 		!HasHitSound(
-		bullet->bulletClass->Power, bullet->flags, bullet->PlayerUID,
-		ti->kind, *targetUID, bullet->bulletClass->Special, true))
+			bullet->flags, bullet->PlayerUID, ti->kind, tUID,
+			bullet->bulletClass->Special, true))
 	{
 		ht = HIT_NONE;
 	}
+	if (targetUID != NULL)
+	{
+		*targetUID = tUID;
+	}
 	return ht;
+}
+static bool CheckWall(const Vec2i tilePos)
+{
+	const Tile *t = MapGetTile(&gMap, tilePos);
+	return t == NULL || t->flags & MAPTILE_NO_SHOOT;
+}
+static bool HitWallFunc(
+	const Vec2i tilePos, void *data, const Vec2i col, const Vec2i normal)
+{
+	HitItemData *hData = data;
+
+	SetClosestCollision(hData, col, normal, HIT_WALL, NULL, tilePos);
+
+	return true;
+}
+static void SetClosestCollision(
+	HitItemData *data, const Vec2i col, const Vec2i normal, HitType ht,
+	TTileItem *target, const Vec2i tilePos)
+{
+	// Choose the best collision point (i.e. closest to origin)
+	const int d2 = DistanceSquared(
+		Vec2iFull2Real(col),
+		Vec2iFull2Real(Vec2iNew(data->Obj->x, data->Obj->y)));
+	if (data->ColPosDistRealSquared < 0 || d2 < data->ColPosDistRealSquared)
+	{
+		data->ColPos = col;
+		data->ColPosDistRealSquared = d2;
+		data->ColNormal = normal;
+		data->HitType = ht;
+		if (ht == HIT_WALL)
+		{
+			data->u.TilePos = tilePos;
+		}
+		else
+		{
+			data->u.Target = target;
+		}
+	}
+}
+static void OnHit(HitItemData *data, TTileItem *target)
+{
+	int targetUID = -1;
+	data->HitType = GetHitType(target, data->Obj, &targetUID);
+	Damage(
+		data->Obj->tileItem.VelFull,
+		data->Obj->bulletClass->Power, data->Obj->bulletClass->Mass,
+		data->Obj->flags, data->Obj->PlayerUID, data->Obj->ActorUID,
+		target->kind, targetUID,
+		data->Obj->bulletClass->Special);
+	if (data->Obj->tileItem.SoundLock <= 0)
+	{
+		data->Obj->tileItem.SoundLock += SOUND_LOCK_TILE_OBJECT;
+	}
+	if (target->SoundLock <= 0)
+	{
+		target->SoundLock += SOUND_LOCK_TILE_OBJECT;
+	}
+	if (data->Obj->specialLock <= 0)
+	{
+		data->Obj->specialLock += SPECIAL_LOCK;
+	}
 }
 
 
-
-#define VERSION 1
+#define VERSION 3
 static void LoadBullet(
-	BulletClass *b, json_t *node, const BulletClass *defaultBullet);
+	BulletClass *b, json_t *node, const BulletClass *defaultBullet,
+	const int version);
 void BulletInitialize(BulletClasses *bullets)
 {
 	memset(bullets, 0, sizeof *bullets);
@@ -486,21 +581,24 @@ void BulletLoadJSON(
 	if (defaultNode != NULL)
 	{
 		BulletClassFree(&bullets->Default);
-		LoadBullet(&bullets->Default, defaultNode->child, NULL);
+		LoadBullet(&bullets->Default, defaultNode->child, NULL, version);
 	}
 
 	json_t *bulletsNode = json_find_first_label(bulletNode, "Bullets")->child;
 	for (json_t *child = bulletsNode->child; child; child = child->next)
 	{
 		BulletClass b;
-		LoadBullet(&b, child, &bullets->Default);
+		LoadBullet(&b, child, &bullets->Default, version);
 		CArrayPushBack(classes, &b);
 	}
 
 	bullets->root = bulletNode;
 }
+static void LoadHitsound(
+	char **hitsound, json_t *node, const char *name, const int version);
 static void LoadBullet(
-	BulletClass *b, json_t *node, const BulletClass *defaultBullet)
+	BulletClass *b, json_t *node, const BulletClass *defaultBullet,
+	const int version)
 {
 	memset(b, 0, sizeof *b);
 	if (defaultBullet != NULL)
@@ -565,6 +663,17 @@ static void LoadBullet(
 	b->RangeLow = MIN(b->RangeLow, b->RangeHigh);
 	b->RangeHigh = MAX(b->RangeLow, b->RangeHigh);
 	LoadInt(&b->Power, node, "Power");
+
+	if (version < 2)
+	{
+		// Old version default mass = power
+		b->Mass = b->Power;
+	}
+	else
+	{
+		LoadDouble(&b->Mass, node, "Mass");
+	}
+
 	LoadVec2i(&b->Size, node, "Size");
 	tmp = NULL;
 	LoadStr(&tmp, node, "Special");
@@ -582,18 +691,19 @@ static void LoadBullet(
 		b->Spark = StrParticleClass(&gParticleClasses, tmp);
 		CFREE(tmp);
 	}
+	tmp = NULL;
+	LoadStr(&tmp, node, "OutOfRangeSpark");
+	if (tmp != NULL)
+	{
+		b->OutOfRangeSpark = StrParticleClass(&gParticleClasses, tmp);
+		CFREE(tmp);
+	}
 	if (json_find_first_label(node, "HitSounds"))
 	{
 		json_t *hitSounds = json_find_first_label(node, "HitSounds")->child;
-		CFREE(b->HitSound.Object);
-		b->HitSound.Object = NULL;
-		LoadStr(&b->HitSound.Object, hitSounds, "Object");
-		CFREE(b->HitSound.Flesh);
-		b->HitSound.Flesh = NULL;
-		LoadStr(&b->HitSound.Flesh, hitSounds, "Flesh");
-		CFREE(b->HitSound.Wall);
-		b->HitSound.Wall = NULL;
-		LoadStr(&b->HitSound.Wall, hitSounds, "Wall");
+		LoadHitsound(&b->HitSound.Object, hitSounds, "Object", version);
+		LoadHitsound(&b->HitSound.Flesh, hitSounds, "Flesh", version);
+		LoadHitsound(&b->HitSound.Wall, hitSounds, "Wall", version);
 	}
 	LoadBool(&b->WallBounces, node, "WallBounces");
 	LoadBool(&b->HitsObjects, node, "HitsObjects");
@@ -619,10 +729,11 @@ static void LoadBullet(
 		b->SpeedScale ? "true" : "false", b->Friction,
 		b->RangeLow, b->RangeHigh, b->Power);
 	LOG(LM_MAP, LL_DEBUG,
-		"...size(%d, %d) hurtAlways(%s) persists(%s) spark(%s)...",
+		"...size(%d, %d) hurtAlways(%s) persists(%s) spark(%s, %s)...",
 		b->Size.x, b->Size.y, b->HurtAlways ? "true" : "false",
 		b->Persists ? "true" : "false",
-		b->Spark != NULL ? b->Spark->Name : "");
+		b->Spark != NULL ? b->Spark->Name : "",
+		b->OutOfRangeSpark != NULL ? b->OutOfRangeSpark->Name : "");
 	LOG(LM_MAP, LL_DEBUG,
 		"...hitSounds(object(%s), flesh(%s), wall(%s)) wallBounces(%s)...",
 		b->HitSound.Object != NULL ? b->HitSound.Object : "",
@@ -643,6 +754,35 @@ static void LoadBullet(
 		(int)b->OutOfRangeGuns.size,
 		(int)b->HitGuns.size,
 		(int)b->ProximityGuns.size);
+}
+static void LoadHitsound(
+	char **hitsound, json_t *node, const char *name, const int version)
+{
+	CFREE(*hitsound);
+	*hitsound = NULL;
+	LoadStr(hitsound, node, name);
+	if (version < 3)
+	{
+		// Moved hit_XXX sounds to hits folder
+		if (*hitsound != NULL)
+		{
+			char buf[CDOGS_FILENAME_MAX];
+			strcpy(buf, "hits/");
+			if (strncmp(*hitsound, "hit_", strlen("hit_")) == 0)
+			{
+				strcat(buf, *hitsound + strlen("hit_"));
+				CFREE(*hitsound);
+				CSTRDUP(*hitsound, buf);
+			}
+			else if (strncmp(*hitsound, "knife_", strlen("knife_")) == 0)
+			{
+				strcpy(buf, "hits/knife_");
+				strcat(buf, *hitsound + strlen("knife_"));
+				CFREE(*hitsound);
+				CSTRDUP(*hitsound, buf);
+			}
+		}
+	}
 }
 static void BulletClassesLoadWeapons(CArray *classes);
 void BulletLoadWeapons(BulletClasses *bullets)
@@ -735,12 +875,13 @@ void BulletAdd(const NAddBullet add)
 	obj->z = add.MuzzleHeight;
 	obj->dz = add.Elevation;
 
-	obj->vel = Vec2iFull2Real(Vec2iScale(
+	obj->tileItem.VelFull = Vec2iFull2Real(Vec2iScale(
 		GetFullVectorsForRadians(add.Angle),
 		RAND_INT(obj->bulletClass->SpeedLow, obj->bulletClass->SpeedHigh)));
 	if (obj->bulletClass->SpeedScale)
 	{
-		obj->vel.y = obj->vel.y * TILE_WIDTH / TILE_HEIGHT;
+		obj->tileItem.VelFull.y =
+			obj->tileItem.VelFull.y * TILE_WIDTH / TILE_HEIGHT;
 	}
 
 	obj->PlayerUID = add.PlayerUID;

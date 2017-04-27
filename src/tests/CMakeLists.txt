@@ -24,6 +24,8 @@ add_executable(autosave_test
 	../cdogs/color.c
 	../cdogs/json_utils.c
 	../cdogs/json_utils.h
+	../cdogs/log.c
+	../cdogs/log.h
 	../cdogs/utils.c
 	../cdogs/utils.h)
 target_link_libraries(autosave_test
@@ -94,6 +96,8 @@ add_executable(json_test
 	../cdogs/color.c
 	../cdogs/json_utils.c
 	../cdogs/json_utils.h
+	../cdogs/log.c
+	../cdogs/log.h
 	../cdogs/utils.c
 	../cdogs/utils.h)
 target_link_libraries(json_test
@@ -102,6 +106,19 @@ target_link_libraries(json_test
 	${SDL2_LIBRARY}
 	${EXTRA_LIBRARIES})
 add_test(NAME json_test COMMAND json_test)
+
+add_executable(minkowski_hex_test
+	minkowski_hex_test.c
+	../cdogs/collision/minkowski_hex.c
+	../cdogs/collision/minkowski_hex.h
+	../cdogs/utils.c
+	../cdogs/utils.h
+	../cdogs/vector.c
+	../cdogs/vector.h)
+target_link_libraries(minkowski_hex_test
+	cbehave
+	${EXTRA_LIBRARIES})
+add_test(NAME minkowski_hex_test COMMAND minkowski_hex_test)
 
 add_executable(pic_test
 	pic_test.c

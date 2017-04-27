@@ -29,6 +29,7 @@
 
 #include "blit.h"
 #include "json_utils.h"
+#include "log.h"
 #include "palette.h"
 #include "pic_manager.h"
 #include "utils.h"
@@ -42,24 +43,6 @@ PicType StrPicType(const char *s)
 	S2T(PICTYPE_ANIMATED_RANDOM, "AnimatedRandom");
 	CASSERT(false, "unknown pic type");
 	return PICTYPE_NORMAL;
-}
-
-
-void PicFromPicPaletted(Pic *pic, const PicPaletted *picP)
-{
-	pic->size = Vec2iNew(picP->w, picP->h);
-	pic->offset = Vec2iZero();
-	CMALLOC(pic->Data, pic->size.x * pic->size.y * sizeof *pic->Data);
-	for (int i = 0; i < pic->size.x * pic->size.y; i++)
-	{
-		unsigned char palette = *(picP->data + i);
-		pic->Data[i] = COLOR2PIXEL(PaletteToColor(palette));
-		// Special case: if the palette colour is 0, it's transparent
-		if (palette == 0)
-		{
-			pic->Data[i] = 0;
-		}
-	}
 }
 
 
@@ -89,26 +72,38 @@ void NamedSpritesFree(NamedSprites *ns)
 	CArrayTerminate(&ns->pics);
 }
 
+static void LoadNormal(CPic *p, json_t *node);
+static void LoadMaskTint(CPic *p, json_t *node);
+
 void CPicLoadJSON(CPic *p, json_t *node)
 {
 	char *tmp = GetString(node, "Type");
 	p->Type = StrPicType(tmp);
 	CFREE(tmp);
+	tmp = NULL;
 	switch (p->Type)
 	{
 	case PICTYPE_NORMAL:
-		tmp = GetString(node, "Pic");
-		p->u.Pic = PicManagerGetPic(&gPicManager, tmp);
-		CFREE(tmp);
+		LoadNormal(p, json_find_first_label(node, "Pic")->child);
 		break;
 	case PICTYPE_DIRECTIONAL:
-		tmp = GetString(node, "Sprites");
+		LoadStr(&tmp, node, "Sprites");
+		if (tmp == NULL)
+		{
+			LOG(LM_GFX, LL_ERROR, "cannot load sprites");
+			goto bail;
+		}
 		p->u.Sprites = &PicManagerGetSprites(&gPicManager, tmp)->pics;
 		CFREE(tmp);
 		break;
 	case PICTYPE_ANIMATED:	// fallthrough
 	case PICTYPE_ANIMATED_RANDOM:
-		tmp = GetString(node, "Sprites");
+		LoadStr(&tmp, node, "Sprites");
+		if (tmp == NULL)
+		{
+			LOG(LM_GFX, LL_ERROR, "cannot load sprites");
+			goto bail;
+		}
 		p->u.Animated.Sprites =
 			&PicManagerGetSprites(&gPicManager, tmp)->pics;
 		CFREE(tmp);
@@ -122,11 +117,34 @@ void CPicLoadJSON(CPic *p, json_t *node)
 		CASSERT(false, "unknown pic type");
 		break;
 	}
+	LoadMaskTint(p, node);
+bail:
+	// TODO: return error
+	return;
+}
+
+void CPicLoadNormal(CPic *p, json_t *node)
+{
+	p->Type = PICTYPE_NORMAL;
+	LoadNormal(p, node);
+	p->UseMask = true;
+	p->u1.Mask = colorWhite;
+}
+
+static void LoadNormal(CPic *p, json_t *node)
+{
+	char *tmp = json_unescape(node->text);
+	p->u.Pic = PicManagerGetPic(&gPicManager, tmp);
+	CFREE(tmp);
+}
+
+static void LoadMaskTint(CPic *p, json_t *node)
+{
 	p->UseMask = true;
 	p->u1.Mask = colorWhite;
 	if (json_find_first_label(node, "Mask"))
 	{
-		tmp = GetString(node, "Mask");
+		char *tmp = GetString(node, "Mask");
 		p->u1.Mask = StrColor(tmp);
 		CFREE(tmp);
 	}
@@ -141,6 +159,58 @@ void CPicLoadJSON(CPic *p, json_t *node)
 		p->u1.Tint.v = atof(tint->text);
 	}
 }
+
+bool CPicIsLoaded(const CPic *p)
+{
+	switch (p->Type)
+	{
+	case PICTYPE_NORMAL:
+		return p->u.Pic != NULL;
+	case PICTYPE_DIRECTIONAL:
+		return p->u.Sprites != NULL;
+	case PICTYPE_ANIMATED:
+	case PICTYPE_ANIMATED_RANDOM:
+		return p->u.Animated.Sprites != NULL;
+	default:
+		CASSERT(false, "unknown pic type");
+		return false;
+	}
+}
+
+Vec2i CPicGetSize(const CPic *p)
+{
+	const Pic *pic = CPicGetPic(p, 0);
+	if (pic == NULL)
+	{
+		return Vec2iZero();
+	}
+	return pic->size;
+}
+
+void CPicCopyPic(CPic *dest, const CPic *src)
+{
+	dest->Type = src->Type;
+	switch (src->Type)
+	{
+	case PICTYPE_NORMAL:
+		dest->u.Pic = src->u.Pic;
+		break;
+	case PICTYPE_DIRECTIONAL:
+		dest->u.Sprites = src->u.Sprites;
+		break;
+	case PICTYPE_ANIMATED:
+	case PICTYPE_ANIMATED_RANDOM:
+		dest->u.Animated.Sprites = src->u.Sprites;
+		dest->u.Animated.TicksPerFrame = src->u.Animated.TicksPerFrame;
+		break;
+	default:
+		CASSERT(false, "unknown pic type");
+		break;
+	}
+	dest->UseMask = src->UseMask;
+	dest->u1 = src->u1;
+}
+
 void CPicUpdate(CPic *p, const int ticks)
 {
 	switch (p->Type)
@@ -173,14 +243,14 @@ void CPicUpdate(CPic *p, const int ticks)
 		break;
 	}
 }
-const Pic *CPicGetPic(const CPic *p, direction_e d)
+const Pic *CPicGetPic(const CPic *p, const int idx)
 {
 	switch (p->Type)
 	{
 	case PICTYPE_NORMAL:
 		return p->u.Pic;
 	case PICTYPE_DIRECTIONAL:
-		return CArrayGet(p->u.Sprites, d);
+		return CArrayGet(p->u.Sprites, idx);
 	case PICTYPE_ANIMATED:
 	case PICTYPE_ANIMATED_RANDOM:
 		if (p->u.Animated.Frame < 0 ||

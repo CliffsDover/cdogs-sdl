@@ -22,7 +22,7 @@
     This file incorporates work covered by the following copyright and
     permission notice:
 
-    Copyright (c) 2013-2016, Cong Xu
+    Copyright (c) 2013-2017, Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -53,14 +53,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "actor_fire.h"
 #include "actor_placement.h"
 #include "ai_coop.h"
 #include "ai_utils.h"
 #include "ammo.h"
 #include "character.h"
-#include "collision.h"
+#include "collision/collision.h"
 #include "config.h"
-#include "drawtools.h"
+#include "draw/drawtools.h"
 #include "events.h"
 #include "game_events.h"
 #include "log.h"
@@ -105,8 +106,8 @@ static void CheckPickups(TActor *actor);
 void UpdateActorState(TActor * actor, int ticks)
 {
 	Weapon *gun = ActorGetGun(actor);
-	WeaponUpdate(
-		gun, ticks, actor->Pos, actor->direction, actor->PlayerUID);
+	WeaponUpdate(gun, ticks);
+	ActorFireUpdate(gun, actor, ticks);
 
 	// If we're ready to pick up, always check the pickups
 	if (actor->PickupAll && !gCampaign.IsClient)
@@ -173,15 +174,15 @@ void UpdateActorState(TActor * actor, int ticks)
 	}
 
 	// Footstep sounds
-	// Step on 1
+	// Step on 2 and 6
 	// TODO: custom animation and footstep frames
 	if (ConfigGetBool(&gConfig, "Sound.Footsteps") &&
-		AnimationGetFrame(&actor->anim) == STATE_WALKING_1 &&
+		(AnimationGetFrame(&actor->anim) == 2 ||
+		AnimationGetFrame(&actor->anim) == 6) &&
 		actor->anim.newFrame)
 	{
 		SoundPlayAtPlusDistance(
-			&gSoundDevice,
-			SoundGetRandomFootstep(&gSoundDevice),
+			&gSoundDevice, StrSound("footsteps"),
 			Vec2iNew(actor->tileItem.x, actor->tileItem.y),
 			FOOTSTEP_DISTANCE_PLUS);
 	}
@@ -222,11 +223,13 @@ bool TryMoveActor(TActor *actor, Vec2i pos)
 	if ((!gCampaign.IsClient && actor->PlayerUID < 0) ||
 		ActorIsLocalPlayer(actor->uid))
 	{
-		Vec2i realPos = Vec2iFull2Real(pos);
-		TTileItem *target = CollideGetFirstItem(
-			&actor->tileItem, realPos, TILEITEM_IMPASSABLE,
-			CalcCollisionTeam(1, actor),
-			IsPVP(gCampaign.Entry.Mode));
+		const CollisionParams params =
+		{
+			TILEITEM_IMPASSABLE, CalcCollisionTeam(true, actor),
+			IsPVP(gCampaign.Entry.Mode)
+		};
+		TTileItem *target = OverlapGetFirstItem(
+			&actor->tileItem, pos, actor->tileItem.size, params);
 		if (target)
 		{
 			Weapon *gun = ActorGetGun(actor);
@@ -271,19 +274,15 @@ bool TryMoveActor(TActor *actor, Vec2i pos)
 				return false;
 			}
 
-			Vec2i realYPos = Vec2iFull2Real(Vec2iNew(actor->Pos.x, pos.y));
-			if (CollideGetFirstItem(
-				&actor->tileItem, realYPos, TILEITEM_IMPASSABLE,
-				CalcCollisionTeam(1, actor),
-				IsPVP(gCampaign.Entry.Mode)))
+			const Vec2i yPos = Vec2iNew(actor->Pos.x, pos.y);
+			if (OverlapGetFirstItem(
+				&actor->tileItem, yPos, actor->tileItem.size, params))
 			{
 				pos.y = actor->Pos.y;
 			}
-			Vec2i realXPos = Vec2iFull2Real(Vec2iNew(pos.x, actor->Pos.y));
-			if (CollideGetFirstItem(
-				&actor->tileItem, realXPos, TILEITEM_IMPASSABLE,
-				CalcCollisionTeam(1, actor),
-				IsPVP(gCampaign.Entry.Mode)))
+			const Vec2i xPos = Vec2iNew(pos.x, actor->Pos.y);
+			if (OverlapGetFirstItem(
+				&actor->tileItem, xPos, actor->tileItem.size, params))
 			{
 				pos.x = actor->Pos.x;
 			}
@@ -294,9 +293,8 @@ bool TryMoveActor(TActor *actor, Vec2i pos)
 				// Arbitrarily choose x-only movement
 				pos.y = actor->Pos.y;
 			}
-			realPos = Vec2iFull2Real(pos);
 			if ((pos.x == actor->Pos.x && pos.y == actor->Pos.y) ||
-				IsCollisionWithWall(realPos, actor->tileItem.size))
+				IsCollisionWithWall(Vec2iFull2Real(pos), actor->tileItem.size))
 			{
 				return false;
 			}
@@ -452,7 +450,9 @@ static void CheckTrigger(const Vec2i tilePos)
 	CA_FOREACH_END()
 }
 // Check if the player can pickup any item
-static bool CheckPickupFunc(TTileItem *ti, void *data);
+static bool CheckPickupFunc(
+	TTileItem *ti, void *data, const Vec2i colA, const Vec2i colB,
+	const Vec2i normal);
 static void CheckPickups(TActor *actor)
 {
 	// NPCs can't pickup
@@ -460,13 +460,21 @@ static void CheckPickups(TActor *actor)
 	{
 		return;
 	}
-	CollideTileItems(
-		&actor->tileItem, Vec2iFull2Real(actor->Pos), 0,
-		CalcCollisionTeam(true, actor),
-		IsPVP(gCampaign.Entry.Mode), CheckPickupFunc, actor);
+	const CollisionParams params =
+	{
+		0, CalcCollisionTeam(true, actor), IsPVP(gCampaign.Entry.Mode)
+	};
+	OverlapTileItems(
+		&actor->tileItem, actor->Pos, actor->tileItem.size,
+		params, CheckPickupFunc, actor, NULL, NULL, NULL);
 }
-static bool CheckPickupFunc(TTileItem *ti, void *data)
+static bool CheckPickupFunc(
+	TTileItem *ti, void *data, const Vec2i colA, const Vec2i colB,
+	const Vec2i normal)
 {
+	UNUSED(colA);
+	UNUSED(colB);
+	UNUSED(normal);
 	// Always return true, as we can pickup multiple items in one go
 	if (ti->kind != KIND_PICKUP) return true;
 	TActor *a = data;
@@ -481,12 +489,15 @@ static void CheckRescue(const TActor *a)
 	// Check an area slightly bigger than the actor's size for rescue
 	// objectives
 #define RESCUE_CHECK_PAD 2
+	const CollisionParams params =
+	{
+		TILEITEM_IMPASSABLE, CalcCollisionTeam(true, a),
+		IsPVP(gCampaign.Entry.Mode)
+	};
 	const TTileItem *target = OverlapGetFirstItem(
-		&a->tileItem, Vec2iFull2Real(a->Pos),
+		&a->tileItem, a->Pos,
 		Vec2iAdd(a->tileItem.size, Vec2iNew(RESCUE_CHECK_PAD, RESCUE_CHECK_PAD)),
-		TILEITEM_IMPASSABLE,
-		CalcCollisionTeam(true, a),
-		IsPVP(gCampaign.Entry.Mode));
+		params);
 	if (target != NULL && target->kind == KIND_CHARACTER)
 	{
 		TActor *other = CArrayGet(&gActors, target->id);
@@ -518,7 +529,9 @@ void InjureActor(TActor * actor, int injury)
 	{
 		actor->stateCounter = 0;
 		const Vec2i pos = Vec2iNew(actor->tileItem.x, actor->tileItem.y);
-		SoundPlayAt(&gSoundDevice, SoundGetRandomScream(&gSoundDevice), pos);
+		SoundPlayAt(
+			&gSoundDevice,
+			StrSound(ActorGetCharacter(actor)->Class->Sounds.Aargh), pos);
 		if (actor->PlayerUID >= 0)
 		{
 			SoundPlayAt(
@@ -572,6 +585,8 @@ void ActorReplaceGun(const NActorReplaceGun rg)
 	{
 		return;
 	}
+	LOG(LM_ACTOR, LL_DEBUG, "actor uid(%d) replacing gun(%s) idx(%d) size(%d)",
+		(int)rg.UID, rg.Gun, rg.GunIdx, (int)a->guns.size);
 	Weapon w = WeaponCreate(gun);
 	if (a->guns.size <= rg.GunIdx)
 	{
@@ -624,19 +639,13 @@ void Shoot(TActor *actor)
 			{
 				SoundPlayAt(
 					&gSoundDevice,
-					gSoundDevice.clickSound, Vec2iFull2Real(actor->Pos));
+					StrSound("click"), Vec2iFull2Real(actor->Pos));
 				gun->clickLock = SOUND_LOCK_WEAPON_CLICK;
 			}
 		}
 		return;
 	}
-	WeaponFire(
-		gun,
-		actor->direction,
-		actor->Pos,
-		actor->flags,
-		actor->PlayerUID,
-		actor->uid);
+	ActorFire(gun, actor);
 	if (actor->PlayerUID >= 0)
 	{
 		if (ConfigGetBool(&gConfig, "Game.Ammo") && gun->Gun->AmmoId >= 0)
@@ -872,11 +881,13 @@ void UpdateAllActors(int ticks)
 		if (!gCampaign.IsClient &&
 			gCollisionSystem.allyCollision == ALLYCOLLISION_REPEL)
 		{
-			Vec2i realPos = Vec2iFull2Real(actor->Pos);
-			TTileItem *collidingItem = CollideGetFirstItem(
-				&actor->tileItem, realPos, TILEITEM_IMPASSABLE,
-				COLLISIONTEAM_NONE,
-				IsPVP(gCampaign.Entry.Mode));
+			const CollisionParams params =
+			{
+				TILEITEM_IMPASSABLE, COLLISIONTEAM_NONE,
+				IsPVP(gCampaign.Entry.Mode)
+			};
+			const TTileItem *collidingItem = OverlapGetFirstItem(
+				&actor->tileItem, actor->Pos, actor->tileItem.size, params);
 			if (collidingItem && collidingItem->kind == KIND_CHARACTER)
 			{
 				TActor *collidingActor = CArrayGet(
@@ -920,27 +931,31 @@ static void CheckManualPickups(TActor *a);
 static void ActorUpdatePosition(TActor *actor, int ticks)
 {
 	Vec2i newPos = Vec2iAdd(actor->Pos, actor->MoveVel);
-	if (!Vec2iIsZero(actor->Vel))
+	if (!Vec2iIsZero(actor->tileItem.VelFull))
 	{
-		newPos = Vec2iAdd(newPos, Vec2iScale(actor->Vel, ticks));
+		newPos = Vec2iAdd(newPos, Vec2iScale(actor->tileItem.VelFull, ticks));
 
 		for (int i = 0; i < ticks; i++)
 		{
-			if (actor->Vel.x > 0)
+			if (actor->tileItem.VelFull.x > 0)
 			{
-				actor->Vel.x = MAX(0, actor->Vel.x - VEL_DECAY_X);
+				actor->tileItem.VelFull.x =
+					MAX(0, actor->tileItem.VelFull.x - VEL_DECAY_X);
 			}
 			else
 			{
-				actor->Vel.x = MIN(0, actor->Vel.x + VEL_DECAY_X);
+				actor->tileItem.VelFull.x =
+					MIN(0, actor->tileItem.VelFull.x + VEL_DECAY_X);
 			}
-			if (actor->Vel.y > 0)
+			if (actor->tileItem.VelFull.y > 0)
 			{
-				actor->Vel.y = MAX(0, actor->Vel.y - VEL_DECAY_Y);
+				actor->tileItem.VelFull.y =
+					MAX(0, actor->tileItem.VelFull.y - VEL_DECAY_Y);
 			}
 			else
 			{
-				actor->Vel.y = MIN(0, actor->Vel.y + VEL_DECAY_Y);
+				actor->tileItem.VelFull.y =
+					MIN(0, actor->tileItem.VelFull.y + VEL_DECAY_Y);
 			}
 		}
 	}
@@ -953,18 +968,28 @@ static void ActorUpdatePosition(TActor *actor, int ticks)
 	CheckManualPickups(actor);
 }
 // Check if the actor is over any manual pickups
-static bool CheckManualPickupFunc(TTileItem *ti, void *data);
+static bool CheckManualPickupFunc(
+	TTileItem *ti, void *data, const Vec2i colA, const Vec2i colB,
+	const Vec2i normal);
 static void CheckManualPickups(TActor *a)
 {
 	// NPCs can't pickup
 	if (a->PlayerUID < 0) return;
-	CollideTileItems(
-		&a->tileItem, Vec2iFull2Real(a->Pos), 0,
-		CalcCollisionTeam(true, a),
-		IsPVP(gCampaign.Entry.Mode), CheckManualPickupFunc, a);
+	const CollisionParams params =
+	{
+		0, CalcCollisionTeam(true, a), IsPVP(gCampaign.Entry.Mode)
+	};
+	OverlapTileItems(
+		&a->tileItem, a->Pos,
+		a->tileItem.size, params, CheckManualPickupFunc, a, NULL, NULL, NULL);
 }
-static bool CheckManualPickupFunc(TTileItem *ti, void *data)
+static bool CheckManualPickupFunc(
+	TTileItem *ti, void *data, const Vec2i colA, const Vec2i colB,
+	const Vec2i normal)
 {
+	UNUSED(colA);
+	UNUSED(colB);
+	UNUSED(normal);
 	TActor *a = data;
 	if (ti->kind != KIND_PICKUP) return true;
 	const Pickup *p = CArrayGet(&gPickups, ti->id);
@@ -1008,12 +1033,11 @@ static void ActorDie(TActor *actor)
 	// Add a blood pool
 	GameEvent e = GameEventNew(GAME_EVENT_MAP_OBJECT_ADD);
 	e.u.MapObjectAdd.UID = ObjsGetNextUID();
-	strcpy(
-		e.u.MapObjectAdd.MapObjectClass,
-		RandomBloodMapObject(&gMapObjects)->Name);
+	const MapObject *mo = RandomBloodMapObject(&gMapObjects);
+	strcpy(e.u.MapObjectAdd.MapObjectClass, mo->Name);
 	e.u.MapObjectAdd.Pos = Vec2i2Net(Vec2iFull2Real(actor->Pos));
-	e.u.MapObjectAdd.TileItemFlags = TILEITEM_IS_WRECK;
-	e.u.MapObjectAdd.Health = 0;
+	e.u.MapObjectAdd.TileItemFlags = MapObjectGetFlags(mo);
+	e.u.MapObjectAdd.Health = mo->Health;
 	GameEventsEnqueue(&gGameEvents, e);
 
 	e = GameEventNew(GAME_EVENT_ACTOR_DIE);
@@ -1262,26 +1286,6 @@ void ActorDestroy(TActor *a)
 	a->isInUse = false;
 }
 
-unsigned char BestMatch(const TPalette palette, int r, int g, int b)
-{
-	int d, dMin = 0;
-	int i;
-	int best = -1;
-
-	for (i = 0; i < 256; i++)
-	{
-		d = (r - palette[i].r) * (r - palette[i].r) +
-			(g - palette[i].g) * (g - palette[i].g) +
-			(b - palette[i].b) * (b - palette[i].b);
-		if (best < 0 || d < dMin)
-		{
-			best = i;
-			dMin = d;
-		}
-	}
-	return (unsigned char)best;
-}
-
 TActor *ActorGetByUID(const int uid)
 {
 	CA_FOREACH(TActor, a, gActors)
@@ -1305,6 +1309,12 @@ const Character *ActorGetCharacter(const TActor *a)
 Weapon *ActorGetGun(const TActor *a)
 {
 	return CArrayGet(&a->guns, a->gunIndex);
+}
+Vec2i ActorGetGunMuzzleOffset(const TActor *a)
+{
+	const GunDescription *gun = ActorGetGun(a)->Gun;
+	const CharSprites *cs = ActorGetCharacter(a)->Class->Sprites;
+	return GunGetMuzzleOffset(gun, cs, a->direction);
 }
 int ActorGunGetAmmo(const TActor *a, const Weapon *w)
 {
@@ -1330,6 +1340,7 @@ void ActorSwitchGun(const NActorSwitchGun sg)
 {
 	TActor *a = ActorGetByUID(sg.UID);
 	if (a == NULL || !a->isInUse) return;
+	CASSERT(sg.GunIdx < a->guns.size, "can't switch to unavailable gun");
 	a->gunIndex = sg.GunIdx;
 	SoundPlayAt(
 		&gSoundDevice,
@@ -1454,15 +1465,13 @@ bool ActorIsInvulnerable(
 
 void ActorAddBloodSplatters(TActor *a, const int power, const Vec2i hitVector)
 {
-	const GoreAmount ga = ConfigGetEnum(&gConfig, "Game.Gore");
+	const GoreAmount ga = ConfigGetEnum(&gConfig, "Graphics.Gore");
 	if (ga == GORE_NONE) return;
 
 	// Emit blood based on power and gore setting
 	int bloodPower = power * 2;
 	// Randomly cycle through the blood types
 	int bloodSize = 1;
-	// Spray the blood back with the shot if pushback enabled
-	const bool shotsPushBack = ConfigGetBool(&gConfig, "Game.ShotsPushback");
 	while (bloodPower > 0)
 	{
 		Emitter *em = NULL;
@@ -1483,18 +1492,9 @@ void ActorAddBloodSplatters(TActor *a, const int power, const Vec2i hitVector)
 		{
 			bloodSize = 1;
 		}
-		Vec2i vel;
-		if (shotsPushBack)
-		{
-			vel = Vec2iScaleDiv(
-				Vec2iScale(hitVector, (rand() % 8 + 8) * power),
-				15 * SHOT_IMPULSE_DIVISOR);
-		}
-		else
-		{
-			vel = Vec2iScaleDiv(
-				Vec2iScale(hitVector, rand() % 8 + 8), 20);
-		}
+		const Vec2i vel = Vec2iScaleDiv(
+			Vec2iScale(hitVector, (rand() % 8 + 8) * power),
+			15 * SHOT_IMPULSE_DIVISOR);
 		EmitterStart(em, a->Pos, 10, vel);
 		switch (ga)
 		{

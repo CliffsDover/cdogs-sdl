@@ -22,7 +22,7 @@
     This file incorporates work covered by the following copyright and
     permission notice:
 
-    Copyright (c) 2013-2016, Cong Xu
+    Copyright (c) 2013-2017, Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -46,11 +46,9 @@
     ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 */
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <ctype.h>
 
 #include <SDL.h>
 #ifdef __MINGW32__
@@ -59,37 +57,21 @@
 #endif
 
 #include <cdogs/actors.h>
-#include <cdogs/ammo.h>
 #include <cdogs/automap.h>
-#include <cdogs/character_class.h>
-#include <cdogs/collision.h>
+#include <cdogs/collision/collision.h>
 #include <cdogs/config_io.h>
-#include <cdogs/draw.h>
-#include <cdogs/drawtools.h>
+#include <cdogs/draw/draw.h>
+#include <cdogs/draw/drawtools.h>
 #include <cdogs/events.h>
 #include <cdogs/files.h>
 #include <cdogs/font_utils.h>
-#include <cdogs/grafx.h>
-#include <cdogs/keyboard.h>
-#include <cdogs/map_archive.h>
-#include <cdogs/mission.h>
-#include <cdogs/mission_convert.h>
 #include <cdogs/log.h>
-#include <cdogs/objs.h>
-#include <cdogs/palette.h>
-#include <cdogs/particle.h>
-#include <cdogs/pic_manager.h>
-#include <cdogs/pickup.h>
-#include <cdogs/player_template.h>
-#include <cdogs/triggers.h>
-#include <cdogs/utils.h>
 
 #include <tinydir/tinydir.h>
 
-#include <cdogsed/charsed.h>
+#include <cdogsed/char_editor.h>
 #include <cdogsed/editor_ui.h>
 #include <cdogsed/editor_ui_common.h>
-#include <cdogsed/ui_object.h>
 
 
 // Mouse click areas:
@@ -111,14 +93,14 @@ static bool sIgnoreMouse = false;
 
 static char lastFile[CDOGS_PATH_MAX];
 static EditorBrush brush;
-static Tile sCursorTile;
 Vec2i camera = { 0, 0 };
-#define CAMERA_PAN_SPEED 8
+#define CAMERA_PAN_SPEED 3
 Mission currentMission;
 Mission lastMission;
 #define AUTOSAVE_INTERVAL_SECONDS 60
 Uint32 ticksAutosave;
 Uint32 sTicksElapsed;
+bool fileChanged = false;
 
 
 static Vec2i GetMouseTile(EventHandlers *e)
@@ -164,10 +146,7 @@ static void MakeBackground(GraphicsDevice *g, const bool changedMission)
 	}
 
 	// Clear background first
-	for (int i = 0; i < GraphicsGetScreenSize(&g->cachedConfig); i++)
-	{
-		g->buf[i] = COLOR2PIXEL(colorBlack);
-	}
+	memset(g->buf, 0, GraphicsGetMemSize(&g->cachedConfig));
 	GrafxDrawExtra extra;
 	extra.guideImage = brush.GuideImageSurface;
 	extra.guideImageAlpha = brush.GuideImageAlpha;
@@ -206,17 +185,14 @@ static void Display(GraphicsDevice *g, HandleInputResult result)
 		if (result.RemakeBg || brush.IsGuideImageNew)
 		{
 			// Clear background first
-			for (int i = 0; i < GraphicsGetScreenSize(&g->cachedConfig); i++)
-			{
-				g->buf[i] = COLOR2PIXEL(colorBlack);
-			}
+			memset(g->buf, 0, GraphicsGetMemSize(&g->cachedConfig));
 			brush.IsGuideImageNew = false;
 			GrafxDrawExtra extra;
 			extra.guideImage = brush.GuideImageSurface;
 			extra.guideImageAlpha = brush.GuideImageAlpha;
 			GrafxDrawBackground(g, &sDrawBuffer, tintNone, camera, &extra);
 		}
-		GraphicsBlitBkg(g);
+		GraphicsClear(g);
 
 		// Draw brush highlight tiles
 		if (brush.IsActive && IsBrushPosValid(brush.Pos, mission))
@@ -229,9 +205,7 @@ static void Display(GraphicsDevice *g, HandleInputResult result)
 				screenPos.y >= 0 && screenPos.y < h)
 			{
 				DrawRectangle(
-					g,
-					screenPos, Vec2iNew(TILE_WIDTH, TILE_HEIGHT),
-					colorWhite, DRAW_FLAG_LINE);
+					g, screenPos, TILE_SIZE, colorWhite, DRAW_FLAG_LINE);
 			}
 		CA_FOREACH_END()
 
@@ -249,7 +223,7 @@ static void Display(GraphicsDevice *g, HandleInputResult result)
 	if (fileChanged)
 	{
 		// Display a disk icon to show the game needs saving
-		const Pic *pic = PicManagerGetFromOld(&gPicManager, 221);
+		const Pic *pic = PicManagerGetPic(&gPicManager, "disk1");
 		Blit(&gGraphicsDevice, pic, Vec2iNew(10, y));
 	}
 
@@ -288,7 +262,7 @@ static void Change(UIObject *o, const int d, const bool shift)
 	const EditorResult r = UIObjectChange(o, d, shift);
 	if (r & EDITOR_RESULT_CHANGED)
 	{
-		fileChanged = 1;
+		fileChanged = true;
 	}
 	if (r & EDITOR_RESULT_CHANGED_AND_RELOAD)
 	{
@@ -409,9 +383,7 @@ static void Autosave(void)
 		char buf[CDOGS_PATH_MAX];
 		sprintf(
 			buf, "%s~%d%s", dirname, sAutosaveIndex, PathGetBasename(lastFile));
-		fprintf(stderr, "Autosaving...");
 		MapArchiveSave(buf, &gCampaign.Setting);
-		fprintf(stderr, "done\n");
 		sAutosaveIndex++;
 	}
 }
@@ -428,7 +400,6 @@ static void Setup(const bool changedMission)
 	MissionOptionsTerminate(&gMission);
 	CampaignAndMissionSetup(&gCampaign, &gMission);
 	MakeBackground(&gGraphicsDevice, changedMission);
-	sCursorTile = TileNone();
 
 	Autosave();
 
@@ -470,8 +441,10 @@ static void Open(void)
 		tinydir_dir dir;
 		char buf[CDOGS_PATH_MAX];
 		PathGetDirname(buf, filename);
+		char tabCompleteCandidate[CDOGS_PATH_MAX];
 		if (!tinydir_open_sorted(&dir, buf))
 		{
+			int numCandidates = 0;
 			const char *basename = PathGetBasename(filename);
 			pos.x = x;
 			pos.y += FontH() * 2;
@@ -481,20 +454,37 @@ static void Open(void)
 				tinydir_readfile_n(&dir, &file, i);
 				if (strncmp(file.name, basename, strlen(basename)) == 0)
 				{
-					// Ignore files that aren't campaigns
+					// Ignore files that aren't campaigns or interesting folders
 					if (file.name[0] == '.') continue;
-					if (!file.is_dir &&
-						strcmp(file.extension, "cdogscpn") != 0 &&
-						strcmp(file.extension, "CDOGSCPN") != 0 &&
-						strcmp(file.extension, "cpn") != 0 &&
-						strcmp(file.extension, "CPN") != 0)
+					const bool canOpen =
+						strcmp(file.extension, "cdogscpn") == 0 ||
+						strcmp(file.extension, "CDOGSCPN") == 0 ||
+						strcmp(file.extension, "cpn") == 0 ||
+						strcmp(file.extension, "CPN") == 0;
+					if (!canOpen && !file.is_dir)
+					{
 						continue;
-					pos = FontStrMask(file.path, pos, colorGray);
+					}
+					numCandidates++;
+					strcpy(tabCompleteCandidate, file.path);
+					const color_t c = canOpen ? colorCyan : colorGray;
+					pos = FontStrMask(file.path, pos, c);
+					if (!canOpen)
+					{
+						FontStrMask("/", pos, c);
+						strcat(tabCompleteCandidate, "/");
+					}
 					pos.x = x;
 					pos.y += FontH();
 				}
 			}
 			tinydir_close(&dir);
+
+			// See if there is only one candidate for tab-completion
+			if (numCandidates > 1)
+			{
+				tabCompleteCandidate[0] = '\0';
+			}
 		}
 
 		BlitFlip(&gGraphicsDevice);
@@ -519,6 +509,14 @@ static void Open(void)
 		case SDL_SCANCODE_BACKSPACE:
 			if (filename[0])
 				filename[strlen(filename) - 1] = 0;
+			break;
+
+		case SDL_SCANCODE_TAB:
+			// tab completion - replace filename buffer with it
+			if (tabCompleteCandidate[0])
+			{
+				strcpy(filename, tabCompleteCandidate);
+			}
 			break;
 
 		default:
@@ -548,7 +546,7 @@ static void Open(void)
 			}
 			// Try adding .cpn
 			sprintf(buf, "%s.cpn", filename);
-			if (TryOpen(filename))
+			if (TryOpen(buf))
 			{
 				done = true;
 				break;
@@ -568,7 +566,7 @@ static bool TryOpen(const char *filename)
 	RealPath(filename, buf);
 	if (!MapNewLoad(buf, &gCampaign.Setting))
 	{
-		fileChanged = 0;
+		fileChanged = false;
 		Setup(true);
 		strcpy(lastFile, filename);
 		sAutosaveIndex = 0;
@@ -638,7 +636,7 @@ static void Save(void)
 
 		BlitFlip(&gGraphicsDevice);
 		MapArchiveSave(filename, &gCampaign.Setting);
-		fileChanged = 0;
+		fileChanged = false;
 		strcpy(lastFile, filename);
 		sAutosaveIndex = 0;
 		char msgBuf[CDOGS_PATH_MAX];
@@ -756,7 +754,7 @@ static void Delete(int xc, int yc)
 		AdjustYC(&yc);
 		break;
 	}
-	fileChanged = 1;
+	fileChanged = true;
 	Setup(changedMission);
 }
 
@@ -769,6 +767,7 @@ static HandleInputResult HandleInput(
 	HandleInputResult result = { false, false, false, false };
 	Mission *mission = CampaignGetCurrentMission(&gCampaign);
 	UIObject *o = NULL;
+	const Vec2i brushLastDrawPos = brush.Pos;
 	brush.Pos = GetMouseTile(&gEventHandlers);
 	const bool shift = gEventHandlers.keyboard.modState & KMOD_SHIFT;
 
@@ -810,7 +809,7 @@ static HandleInputResult HandleInput(
 	}
 
 	// Also need to redraw if the brush is active to update the highlight
-	if (brush.IsActive)
+	if (brush.IsActive && !Vec2iEqual(brushLastDrawPos, brush.Pos))
 	{
 		result.Redraw = true;
 	}
@@ -820,7 +819,10 @@ static HandleInputResult HandleInput(
 		MouseWheel(&gEventHandlers.mouse).y != 0))
 	{
 		result.Redraw = true;
-		UITryGetObject(sLastHighlightedObj, mousePos, &o);
+		if (sLastHighlightedObj && !sLastHighlightedObj->IsBackground)
+		{
+			UITryGetObject(sLastHighlightedObj, mousePos, &o);
+		}
 		if (o == NULL)
 		{
 			UITryGetObject(sObjs, mousePos, &o);
@@ -899,7 +901,7 @@ static HandleInputResult HandleInput(
 					EditorBrushStartPainting(&brush, mission, isMain);
 				if (r & EDITOR_RESULT_CHANGED)
 				{
-					fileChanged = 1;
+					fileChanged = true;
 					Autosave();
 					result.RemakeBg = true;
 					sHasUnbakedChanges = true;
@@ -922,7 +924,7 @@ static HandleInputResult HandleInput(
 			const EditorResult r = EditorBrushStopPainting(&brush, mission);
 			if (r & EDITOR_RESULT_CHANGED)
 			{
-				fileChanged = 1;
+				fileChanged = true;
 				Autosave();
 				result.Redraw = true;
 				result.RemakeBg = true;
@@ -1005,7 +1007,7 @@ static HandleInputResult HandleInput(
 				MissionCopy(mission, &lastMission);	// B,B,A -> A,B,A
 				MissionCopy(&lastMission, &currentMission);	// A,B,A -> A,B,B
 			}
-			fileChanged = 1;
+			fileChanged = true;
 			Setup(false);	// A,B,B -> A,A,B
 			break;
 
@@ -1029,7 +1031,7 @@ static HandleInputResult HandleInput(
 			if (!Vec2iIsZero(scrap->Size))
 			{
 				InsertMission(&gCampaign, scrap, gCampaign.MissionIndex);
-				fileChanged = 1;
+				fileChanged = true;
 				Setup(false);
 			}
 			break;
@@ -1049,7 +1051,7 @@ static HandleInputResult HandleInput(
 		case 'n':
 			InsertMission(&gCampaign, NULL, gCampaign.Setting.Missions.size);
 			gCampaign.MissionIndex = gCampaign.Setting.Missions.size - 1;
-			fileChanged = 1;
+			fileChanged = true;
 			Setup(true);
 			break;
 
@@ -1070,7 +1072,9 @@ static HandleInputResult HandleInput(
 			break;
 
 		case 'e':
-			EditCharacters(&gCampaign.Setting);
+			CharEditor(
+				&gGraphicsDevice, &gCampaign.Setting, &gEventHandlers,
+				&fileChanged);
 			Setup(false);
 			UIObjectUnhighlight(sObjs, true);
 			CArrayTerminate(&sDrawObjs);
@@ -1126,7 +1130,7 @@ static HandleInputResult HandleInput(
 			break;
 
 		case SDL_SCANCODE_BACKSPACE:
-			fileChanged |= UIObjectDelChar(sObjs);
+			fileChanged = UIObjectDelChar(sObjs) || fileChanged;
 			break;
 
 		default:
@@ -1137,7 +1141,7 @@ static HandleInputResult HandleInput(
 		char *c = gEventHandlers.keyboard.Typed;
 		while (c && *c >= ' ' && *c <= '~')
 		{
-			fileChanged |= UIObjectAddChar(sObjs, *c);
+			fileChanged = UIObjectAddChar(sObjs, *c) || fileChanged;
 			c++;
 		}
 	}
@@ -1223,7 +1227,7 @@ static void InputInsert(int *xc, const int yc, Mission *mission)
 		}
 		break;
 	}
-	fileChanged = 1;
+	fileChanged = true;
 	Setup(changedMission);
 }
 static void InputDelete(const int xc, const int yc)
@@ -1242,7 +1246,6 @@ static void EditCampaign(void)
 	Mission scrap;
 	memset(&scrap, 0, sizeof scrap);
 
-	gCampaign.seed = 0;
 	Setup(true);
 
 	Uint32 ticksNow = SDL_GetTicks();
@@ -1257,16 +1260,13 @@ static void EditCampaign(void)
 		if (sTicksElapsed < 1000 / FPS_FRAMELIMIT * 2)
 		{
 			SDL_Delay(1);
-			debug(D_VERBOSE, "Delaying 1 ticksNow %u elapsed %u\n", ticksNow, sTicksElapsed);
 			continue;
 		}
 
-		debug(D_MAX, "Polling for input\n");
 		EventPoll(&gEventHandlers, SDL_GetTicks());
 		const SDL_Scancode sc = KeyGetPressed(&gEventHandlers.keyboard);
 		const int m = MouseGetPressed(&gEventHandlers.mouse);
 
-		debug(D_MAX, "Handling input\n");
 		HandleInputResult result = HandleInput(
 			sc, m, &xc, &yc, &xcOld, &ycOld, &scrap);
 		if (result.Done)
@@ -1283,7 +1283,6 @@ static void EditCampaign(void)
 				GetKey(&gEventHandlers);
 			}
 		}
-		debug(D_MAX, "End loop\n");
 		sTicksElapsed -= 1000 / (FPS_FRAMELIMIT * 2);
 	}
 	SDL_StopTextInput();
@@ -1292,13 +1291,15 @@ static void EditCampaign(void)
 
 int main(int argc, char *argv[])
 {
+#if defined(_MSC_VER) && !defined(NDEBUG)
+	FreeConsole();
+#endif
 	int i;
 	int loaded = 0;
 
 	LogInit();
 	printf("C-Dogs SDL Editor\n");
 
-	debug(D_NORMAL, "Initialising SDL...\n");
 	if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO) != 0)
 	{
 		printf("Failed to start SDL!\n");
@@ -1314,12 +1315,7 @@ int main(int argc, char *argv[])
 	strcpy(lastFile, "");
 
 	gConfig = ConfigLoad(GetConfigFilePath(CONFIG_FILE));
-	if (!PicManagerTryInit(
-		&gPicManager, "graphics/cdogs.px", "graphics/cdogs2.px"))
-	{
-		exit(0);
-	}
-	memcpy(origPalette, gPicManager.palette, sizeof origPalette);
+	PicManagerInit(&gPicManager);
 	// Hardcode config settings
 	ConfigGet(&gConfig, "Graphics.ScaleFactor")->u.Int.Value = 2;
 	ConfigGet(&gConfig, "Graphics.ScaleMode")->u.Enum.Value = SCALE_MODE_NN;
@@ -1330,7 +1326,7 @@ int main(int argc, char *argv[])
 	ConfigSetChanged(&gConfig);
 	GraphicsInit(&gGraphicsDevice, &gConfig);
 	gGraphicsDevice.cachedConfig.IsEditor = true;
-	GraphicsInitialize(&gGraphicsDevice, false);
+	GraphicsInitialize(&gGraphicsDevice);
 	if (!gGraphicsDevice.IsInitialized)
 	{
 		printf("Video didn't init!\n");
@@ -1338,6 +1334,7 @@ int main(int argc, char *argv[])
 	}
 	FontLoadFromJSON(&gFont, "graphics/font.png", "graphics/font.json");
 	PicManagerLoad(&gPicManager, "graphics");
+	CharSpriteClassesInit(&gCharSpriteClasses);
 
 	ParticleClassesInit(&gParticleClasses, "data/particles.json");
 	AmmoInitialize(&gAmmo, "data/ammo.json");
@@ -1371,7 +1368,6 @@ int main(int argc, char *argv[])
 	{
 		if (!loaded)
 		{
-			debug(D_NORMAL, "Loading map %s\n", argv[i]);
 			RealPath(argv[i], lastFile);
 			if (strchr(lastFile, '.') == NULL &&
 				sizeof lastFile - strlen(lastFile) > 3)
@@ -1391,7 +1387,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	debug(D_NORMAL, "Starting editor\n");
 	EditCampaign();
 
 	MapTerminate(&gMap);
@@ -1405,9 +1400,11 @@ int main(int argc, char *argv[])
 	CampaignTerminate(&gCampaign);
 	MissionTerminate(&lastMission);
 	MissionTerminate(&currentMission);
+	CollisionSystemTerminate(&gCollisionSystem);
 
 	DrawBufferTerminate(&sDrawBuffer);
 	GraphicsTerminate(&gGraphicsDevice);
+	CharSpriteClassesTerminate(&gCharSpriteClasses);
 	PicManagerTerminate(&gPicManager);
 	FontTerminate(&gFont);
 
@@ -1416,6 +1413,7 @@ int main(int argc, char *argv[])
 	EditorBrushTerminate(&brush);
 
 	ConfigDestroy(&gConfig);
+	LogTerminate();
 
 	SDL_Quit();
 

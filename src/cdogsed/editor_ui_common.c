@@ -1,7 +1,7 @@
 /*
     C-Dogs SDL
     A port of the legendary (and fun) action/arcade cdogs.
-    Copyright (c) 2014, 2016 Cong Xu
+    Copyright (c) 2014, 2016-2017 Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 void DisplayMapItem(const Vec2i pos, const MapObject *mo)
 {
 	Vec2i offset;
-	const Pic *pic = MapObjectGetPic(mo, &offset, false);
+	const Pic *pic = MapObjectGetPic(mo, &offset);
 	Blit(&gGraphicsDevice, pic, Vec2iAdd(pos, offset));
 }
 
@@ -55,14 +55,14 @@ void DisplayMapItemWithDensity(
 
 void DrawKey(UIObject *o, GraphicsDevice *g, Vec2i pos, void *vData)
 {
-	EditorBrushAndCampaign *data = vData;
-	if (data->Brush.u.ItemIndex == -1)
+	const IndexedEditorBrush *data = vData;
+	if (data->u.ItemIndex == -1)
 	{
 		// No key; don't draw
 		return;
 	}
-	const Mission *m = CampaignGetCurrentMission(data->Campaign);
-	const Pic *pic = KeyPickupClass(m->KeyStyle, data->Brush.u.ItemIndex)->Pic;
+	const Mission *m = CampaignGetCurrentMission(&gCampaign);
+	const Pic *pic = KeyPickupClass(m->KeyStyle, data->u.ItemIndex)->Pic;
 	pos = Vec2iAdd(Vec2iAdd(pos, o->Pos), Vec2iScaleDiv(o->Size, 2));
 	pos = Vec2iMinus(pos, Vec2iScaleDiv(pic->size, 2));
 	Blit(g, pic, pos);
@@ -157,24 +157,19 @@ static const char *CampaignGetSeedStr(UIObject *o, void *data)
 	UNUSED(o);
 	CampaignOptions *co = data;
 	if (!CampaignGetCurrentMission(co)) return NULL;
-	sprintf(s, "Seed: %u", co->seed);
+	sprintf(s, "Seed: %d", ConfigGetInt(&gConfig, "Game.RandomSeed"));
 	return s;
 }
 static void CampaignChangeSeed(void *data, int d)
 {
+	UNUSED(data);
 	if (gEventHandlers.keyboard.modState & KMOD_SHIFT)
 	{
 		d *= 10;
 	}
-	CampaignOptions *co = data;
-	if (d < 0 && co->seed < (unsigned)-d)
-	{
-		co->seed = 0;
-	}
-	else
-	{
-		co->seed += d;
-	}
+	ConfigSetInt(
+		&gConfig, "Game.RandomSeed",
+		ConfigGetInt(&gConfig, "Game.RandomSeed") + d);
 }
 
 typedef struct

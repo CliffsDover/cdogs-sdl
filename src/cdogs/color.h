@@ -30,6 +30,7 @@
 
 #include "sys_specifics.h"
 
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef struct
@@ -51,6 +52,7 @@ extern color_t colorGray;
 extern color_t colorYellow;
 extern color_t colorMagenta;
 extern color_t colorCyan;
+extern color_t colorFog;
 
 extern color_t colorMaroon;
 extern color_t colorLonestar;
@@ -108,7 +110,8 @@ extern HSV tintDarker;
 // v: scale factor on the final components
 color_t ColorTint(color_t c, HSV hsv);
 
-int ColorEquals(color_t a, color_t b);
+bool ColorEquals(const color_t a, const color_t b);
+bool HSVEquals(const HSV a, const HSV b);
 
 // Convert hex string to color
 color_t StrColor(const char *s);

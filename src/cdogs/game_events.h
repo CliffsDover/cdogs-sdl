@@ -2,7 +2,7 @@
     C-Dogs SDL
     A port of the legendary (and fun) action/arcade cdogs.
 
-    Copyright (c) 2013-2016, Cong Xu
+    Copyright (c) 2013-2017, Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -70,8 +70,6 @@ typedef enum
 	GAME_EVENT_ACTOR_STATE,
 	GAME_EVENT_ACTOR_DIR,
 	GAME_EVENT_ACTOR_SLIDE,
-	// TODO: event only used by actor hit and screen boundaries
-	// If the latter is removed, it can be incorporated into actor hit
 	GAME_EVENT_ACTOR_IMPULSE,
 	GAME_EVENT_ACTOR_SWITCH_GUN,
 	GAME_EVENT_ACTOR_PICKUP_ALL,
@@ -114,7 +112,9 @@ typedef enum
 typedef struct
 {
 	GameEventType Type;
+	// Whether this message is sent by server to clients
 	bool Broadcast;
+	// Whether clients send this message to the server
 	bool Submit;
 	// Whether to simply enqueue as game event; otherwise processed by handler
 	bool Enqueue;
@@ -145,6 +145,7 @@ typedef struct
 			char Message[256];
 			int Ticks;
 		} SetMessage;
+		NGameBegin GameBegin;
 		NActorAdd ActorAdd;
 		NActorMove ActorMove;
 		NActorState ActorState;

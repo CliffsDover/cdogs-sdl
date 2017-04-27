@@ -28,7 +28,7 @@
 #pragma once
 
 #include "campaigns.h"
-#include "draw_buffer.h"
+#include "draw/draw_buffer.h"
 #include "grafx.h"
 
 typedef struct
@@ -39,11 +39,12 @@ typedef struct
 void GrafxDrawBackground(
 	GraphicsDevice *g, DrawBuffer *buffer,
 	HSV tint, Vec2i pos, GrafxDrawExtra *extra);
+void GrafxRedrawBackground(GraphicsDevice *g, const Vec2i pos);
 void GrafxMakeBackground(
 	GraphicsDevice *device, DrawBuffer *buffer,
 	CampaignOptions *co, struct MissionOptions *mo, Map *map, HSV tint,
 	const bool isEditor, Vec2i pos, GrafxDrawExtra *extra);
-void GraphicsBlitBkg(GraphicsDevice *device);
+void GraphicsClear(GraphicsDevice *device);
 
 void GrafxMakeRandomBackground(
 	GraphicsDevice *device,

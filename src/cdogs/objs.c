@@ -22,7 +22,7 @@
     This file incorporates work covered by the following copyright and
     permission notice:
 
-    Copyright (c) 2013-2016, Cong Xu
+    Copyright (c) 2013-2017, Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -49,27 +49,12 @@
 #include "objs.h"
 
 #include <assert.h>
-#include <string.h>
-#include <stdlib.h>
 
-#include "bullet_class.h"
-#include "collision.h"
-#include "config.h"
 #include "damage.h"
-#include "game_events.h"
 #include "log.h"
-#include "map.h"
 #include "net_util.h"
-#include "screen_shake.h"
-#include "blit.h"
-#include "pic_manager.h"
 #include "pickup.h"
-#include "defs.h"
-#include "actors.h"
 #include "gamedata.h"
-#include "mission.h"
-#include "game.h"
-#include "utils.h"
 
 CArray gObjs;
 CArray gMobObjs;
@@ -79,10 +64,15 @@ static unsigned int sMobObjUIDs = 0;
 
 // Draw functions
 
-static const Pic *GetObjectPic(const int id, Vec2i *offset)
+static CPicDrawContext GetMapObjectDrawContext(const int id)
 {
-	const TObject *obj = CArrayGet(&gObjs, id);
-	return MapObjectGetPic(obj->Class, offset, obj->Health == 0);
+	TObject *obj = CArrayGet(&gObjs, id);
+	CASSERT(obj->isInUse, "Cannot draw non-existent mobobj");
+	CPicDrawContext c;
+	c.Dir = DIRECTION_UP;
+	c.Offset = obj->Class->Offset;
+	CPicCopyPic(&obj->tileItem.CPic, &obj->Class->Pic);
+	return c;
 }
 
 
@@ -109,6 +99,51 @@ void DamageObject(const NMapObjectDamage mod)
 	}
 }
 
+static void AddPickupAtObject(const TObject *o, const PickupType type)
+{
+	GameEvent e = GameEventNew(GAME_EVENT_ADD_PICKUP);
+	switch (type)
+	{
+	case PICKUP_JEWEL: CASSERT(false, "unexpected pickup type"); break;
+	case PICKUP_HEALTH:
+		if (!ConfigGetBool(&gConfig, "Game.HealthPickups"))
+		{
+			return;
+		}
+		strcpy(e.u.AddPickup.PickupClass, "health");
+		break;
+	case PICKUP_AMMO:
+		if (!ConfigGetBool(&gConfig, "Game.Ammo"))
+		{
+			return;
+		}
+		// Pick a random ammo type and spawn it
+		{
+			const int ammoId = rand() % AmmoGetNumClasses(&gAmmo);
+			const Ammo *a = AmmoGetById(&gAmmo, ammoId);
+			sprintf(e.u.AddPickup.PickupClass, "ammo_%s", a->Name);
+		}
+		break;
+	case PICKUP_KEYCARD: CASSERT(false, "unexpected pickup type"); break;
+	case PICKUP_GUN:
+		// Pick a random mission gun type and spawn it
+		{
+			const int gunId = (int)(rand() % gMission.Weapons.size);
+			const GunDescription **gun = CArrayGet(&gMission.Weapons, gunId);
+			sprintf(e.u.AddPickup.PickupClass, "gun_%s", (*gun)->name);
+		}
+		break;
+	default: CASSERT(false, "unexpected pickup type"); break;
+	}
+	e.u.AddPickup.UID = PickupsGetNextUID();
+	e.u.AddPickup.Pos = Vec2i2Net(Vec2iNew(o->tileItem.x, o->tileItem.y));
+	e.u.AddPickup.IsRandomSpawned = true;
+	e.u.AddPickup.SpawnerUID = -1;
+	e.u.AddPickup.TileItemFlags = 0;
+	GameEventsEnqueue(&gGameEvents, e);
+}
+
+static void PlaceWreck(const char *wreckClass, const TTileItem *ti);
 void ObjRemove(const NMapObjectRemove mor)
 {
 	TObject *o = ObjGetByUID(mor.UID);
@@ -138,6 +173,19 @@ void ObjRemove(const NMapObjectRemove mor)
 				true, false);
 		CA_FOREACH_END()
 
+		// Random chance to add pickups in single player modes
+		if (!IsPVP(gCampaign.Entry.Mode))
+		{
+			CA_FOREACH(
+				const MapObjectDestroySpawn, mods,  o->Class->DestroySpawn)
+				const double chance = (double) rand() / RAND_MAX;
+				if (chance < mods->SpawnChance)
+				{
+					AddPickupAtObject(o, mods->Type);
+				}
+			CA_FOREACH_END()
+		}
+
 		// A wreck left after the destruction of this object
 		// TODO: doesn't need to be network event
 		GameEvent e = GameEventNew(GAME_EVENT_ADD_BULLET);
@@ -153,21 +201,37 @@ void ObjRemove(const NMapObjectRemove mor)
 		GameEventsEnqueue(&gGameEvents, e);
 	}
 
-	SoundPlayAt(&gSoundDevice, gSoundDevice.wreckSound, realPos);
+	SoundPlayAt(&gSoundDevice, StrSound("bang"), realPos);
 
-	// Turn the object into a wreck, if available
-	if (o->Class->Wreck.Pic)
-	{
-		o->tileItem.flags = TILEITEM_IS_WRECK;
-	}
-	else
-	{
-		ObjDestroy(o);
-	}
+	// If wreck is available spawn it in the exact same position
+	PlaceWreck(o->Class->Wreck, &o->tileItem);
+
+	ObjDestroy(o);
 
 	// Update pathfinding cache since this object could have blocked a path
 	// before
 	PathCacheClear(&gPathCache);
+}
+static void PlaceWreck(const char *wreckClass, const TTileItem *ti)
+{
+	if (wreckClass == NULL)
+	{
+		return;
+	}
+	GameEvent e = GameEventNew(GAME_EVENT_MAP_OBJECT_ADD);
+	e.u.MapObjectAdd.UID = ObjsGetNextUID();
+	const MapObject *mo = StrMapObject(wreckClass);
+	CASSERT(mo != NULL, "cannot find wreck");
+	if (mo == NULL)
+	{
+		LOG(LM_MAIN, LL_ERROR, "wreck (%s) not found", wreckClass);
+		return;
+	}
+	strcpy(e.u.MapObjectAdd.MapObjectClass, mo->Name);
+	e.u.MapObjectAdd.Pos = Vec2i2Net(Vec2iNew(ti->x, ti->y));
+	e.u.MapObjectAdd.TileItemFlags = MapObjectGetFlags(mo);
+	e.u.MapObjectAdd.Health = mo->Health;
+	GameEventsEnqueue(&gGameEvents, e);
 }
 
 bool CanHit(const int flags, const int uid, const TTileItem *target)
@@ -185,7 +249,7 @@ bool CanHit(const int flags, const int uid, const TTileItem *target)
 	return false;
 }
 bool HasHitSound(
-	const int power, const int flags, const int playerUID,
+	const int flags, const int playerUID,
 	const TileItemKind targetKind, const int targetUID,
 	const special_damage_e special, const bool allowFriendlyHitSound)
 {
@@ -200,7 +264,7 @@ bool HasHitSound(
 					a, flags, playerUID, gCampaign.Entry.Mode));
 		}
 	case KIND_OBJECT:
-		return power > 0;
+		return true;
 	default:
 		CASSERT(false, "cannot damage tile item kind");
 		break;
@@ -211,6 +275,7 @@ bool HasHitSound(
 static void DoDamageCharacter(
 	const Vec2i hitVector,
 	const int power,
+	const double mass,
 	const int flags,
 	const int playerUID,
 	const int uid,
@@ -219,6 +284,7 @@ static void DoDamageCharacter(
 void Damage(
 	const Vec2i hitVector,
 	const int power,
+	const double mass,
 	const int flags,
 	const int playerUID,
 	const int uid,
@@ -230,7 +296,7 @@ void Damage(
 	case KIND_CHARACTER:
 		DoDamageCharacter(
 			hitVector,
-			power, flags, playerUID, uid,
+			power, mass, flags, playerUID, uid,
 			ActorGetByUID(targetUID), special);
 		break;
 	case KIND_OBJECT:
@@ -252,6 +318,7 @@ void Damage(
 static void DoDamageCharacter(
 	const Vec2i hitVector,
 	const int power,
+	const double mass,
 	const int flags,
 	const int playerUID,
 	const int uid,
@@ -262,12 +329,16 @@ static void DoDamageCharacter(
 	CASSERT(actor->isInUse, "Cannot damage nonexistent player");
 	CASSERT(CanHitCharacter(flags, uid, actor), "damaging undamageable actor");
 
-	if (ConfigGetBool(&gConfig, "Game.ShotsPushback"))
+	// Shot pushback, based on mass and velocity
+	const double impulseFactor = mass / SHOT_IMPULSE_DIVISOR;
+	const Vec2i vel = Vec2iNew(
+		(int)Round(hitVector.x * impulseFactor),
+		(int)Round(hitVector.y * impulseFactor));
+	if (!Vec2iIsZero(vel))
 	{
 		GameEvent ei = GameEventNew(GAME_EVENT_ACTOR_IMPULSE);
 		ei.u.ActorImpulse.UID = actor->uid;
-		ei.u.ActorImpulse.Vel = Vec2i2Net(Vec2iScaleDiv(
-			Vec2iScale(hitVector, power), SHOT_IMPULSE_DIVISOR));
+		ei.u.ActorImpulse.Vel = Vec2i2Net(vel);
 		ei.u.ActorImpulse.Pos = Vec2i2Net(actor->Pos);
 		GameEventsEnqueue(&gGameEvents, ei);
 	}
@@ -324,7 +395,6 @@ void UpdateMobileObjects(int ticks)
 			GameEventsEnqueue(&gGameEvents, e);
 			continue;
 		}
-		CPicUpdate(&obj->tileItem.CPic, ticks);
 	CA_FOREACH_END()
 }
 
@@ -386,7 +456,9 @@ void ObjAdd(const NMapObjectAdd amo)
 	o->tileItem.x = o->tileItem.y = -1;
 	o->tileItem.flags = amo.TileItemFlags;
 	o->tileItem.kind = KIND_OBJECT;
-	o->tileItem.getPicFunc = GetObjectPic;
+	o->tileItem.getPicFunc = NULL;
+	o->tileItem.CPic = o->Class->Pic;
+	o->tileItem.CPicFunc = GetMapObjectDrawContext;
 	o->tileItem.size = o->Class->Size;
 	o->tileItem.id = i;
 	MapTryMoveTileItem(&gMap, &o->tileItem, Net2Vec2i(amo.Pos));
@@ -394,7 +466,11 @@ void ObjAdd(const NMapObjectAdd amo)
 	LOG(LM_MAIN, LL_DEBUG,
 		"added object uid(%d) class(%s) health(%d) pos(%d, %d)",
 		(int)amo.UID, amo.MapObjectClass, amo.Health, amo.Pos.x, amo.Pos.y);
+
+	// Update pathfinding cache since this object could block a path
+	PathCacheClear(&gPathCache);
 }
+
 void ObjDestroy(TObject *o)
 {
 	CASSERT(o->isInUse, "Destroying in-use object");

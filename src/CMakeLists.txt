@@ -3,9 +3,14 @@ include_directories(
 	${SDL2_INCLUDE_DIRS}
 	${SDL2_IMAGE_INCLUDE_DIRS}
 	${SDL2_MIXER_INCLUDE_DIRS})
+if(NOT "${GCW0}")
+	include_directories(${OPENGL_INCLUDE_DIRS})
+endif()
 
 add_subdirectory(cdogs)
-add_subdirectory(cdogsed)
+if(NOT "${GCW0}")
+	add_subdirectory(cdogsed)
+endif()
 add_subdirectory(json)
 add_subdirectory(tests)
 
@@ -13,6 +18,7 @@ set(CDOGS_SDL_SOURCES
 	autosave.c
 	briefing_screens.c
 	cdogs.c
+	command_line.c
 	credits.c
 	game.c
 	mainmenu.c
@@ -29,6 +35,7 @@ set(CDOGS_SDL_SOURCES
 set(CDOGS_SDL_HEADERS
 	autosave.h
 	briefing_screens.h
+	command_line.h
 	credits.h
 	game.h
 	mainmenu.h
@@ -46,20 +53,17 @@ set(CDOGS_SDL_EXTRA)
 if(WIN32)
 	set(CDOGS_SDL_EXTRA ../build/windows/cdogs.rc)
 elseif(APPLE)
-	set(CDOGS_SDL_EXTRA ../build/macosx/cdogs-icon.icns)
-	set_source_files_properties(../build/macosx/cdogs-icon.icns
-		PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-	set(MACOSX_BUNDLE_ICON_FILE cdogs-icon.icns)
-	set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}")
 	set(EXTRA_LIBRARIES "${EXTRA_LIBRARIES} -framework Carbon -framework IOKit")
 endif()
-add_executable(cdogs-sdl MACOSX_BUNDLE
+add_executable(cdogs-sdl
 	${CDOGS_SDL_SOURCES} ${CDOGS_SDL_HEADERS} ${CDOGS_SDL_EXTRA})
 if(APPLE)
 	set_target_properties(cdogs-sdl PROPERTIES
 		MACOSX_RPATH 1
 		BUILD_WITH_INSTALL_RPATH 1
 		INSTALL_RPATH "@loader_path/../Frameworks")
+elseif(MSVC)
+	set_target_properties(cdogs-sdl PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/src")
 endif()
 target_link_libraries(cdogs-sdl cdogs ${EXTRA_LIBRARIES})
 
@@ -72,11 +76,15 @@ if(GCW0)
 	)
 endif()
 
-add_executable(cdogs-sdl-editor MACOSX_BUNDLE cdogsed.c ${CDOGS_SDL_EXTRA})
-if(APPLE)
-	set_target_properties(cdogs-sdl-editor PROPERTIES
-		MACOSX_RPATH 1
-		BUILD_WITH_INSTALL_RPATH 1
-		INSTALL_RPATH "@loader_path/../Frameworks")
+if(NOT "${GCW0}")
+  add_executable(cdogs-sdl-editor cdogsed.c ${CDOGS_SDL_EXTRA})
+  if(APPLE)
+  	set_target_properties(cdogs-sdl-editor PROPERTIES
+  		MACOSX_RPATH 1
+  		BUILD_WITH_INSTALL_RPATH 1
+  		INSTALL_RPATH "@loader_path/../Frameworks")
+  elseif(MSVC)
+  	set_target_properties(cdogs-sdl-editor PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/src")
+  endif()
+  target_link_libraries(cdogs-sdl-editor cdogsedlib cdogs ${OPENGL_LIBRARIES} ${EXTRA_LIBRARIES})
 endif()
-target_link_libraries(cdogs-sdl-editor cdogsedlib cdogs ${EXTRA_LIBRARIES})

@@ -2,7 +2,7 @@
 	C-Dogs SDL
 	A port of the legendary (and fun) action/arcade cdogs.
 
-	Copyright (c) 2016 Cong Xu
+	Copyright (c) 2016-2017 Cong Xu
 	All rights reserved.
 
 	Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@
 #include "log.h"
 
 
-#define VERSION 1
+#define VERSION 2
 
 CharacterClasses gCharacterClasses;
 
@@ -78,6 +78,41 @@ static const char *faceNames[] =
 const CharacterClass *IntCharacterClass(const int face)
 {
 	return StrCharacterClass(faceNames[face]);
+}
+const CharacterClass *IndexCharacterClass(const int i)
+{
+	CASSERT(
+		i >= 0 &&
+		i < (int)gCharacterClasses.Classes.size +
+			(int)gCharacterClasses.CustomClasses.size,
+		"Character class index out of bounds");
+	if (i < (int)gCharacterClasses.Classes.size)
+	{
+		return CArrayGet(&gCharacterClasses.Classes, i);
+	}
+	return CArrayGet(
+		&gCharacterClasses.CustomClasses, i - gCharacterClasses.Classes.size);
+}
+int CharacterClassIndex(const CharacterClass *c)
+{
+	if (c == NULL)
+	{
+		return 0;
+	}
+	CA_FOREACH(const CharacterClass, cc, gCharacterClasses.Classes)
+		if (cc == c)
+		{
+			return _ca_index;
+		}
+	CA_FOREACH_END()
+	CA_FOREACH(const CharacterClass, cc, gCharacterClasses.CustomClasses)
+		if (cc == c)
+		{
+			return _ca_index + gCharacterClasses.Classes.size;
+		}
+	CA_FOREACH_END()
+	CASSERT(false, "cannot find character class");
+	return -1;
 }
 
 void CharacterClassesInitialize(CharacterClasses *c, const char *filename)
@@ -134,13 +169,25 @@ static void LoadCharacterClass(CharacterClass *c, json_t *node)
 {
 	memset(c, 0, sizeof *c);
 	c->Name = GetString(node, "Name");
-	json_t *facePics = json_find_first_label(node, "FacePics")->child;
-	CPicLoadJSON(&c->IdlePics, json_find_first_label(facePics, "Idle")->child);
-	if (json_find_first_label(facePics, "Firing"))
+	CPicLoadJSON(&c->HeadPics, json_find_first_label(node, "HeadPics")->child);
+	// TODO: custom character sprites
+	c->Sprites = StrCharSpriteClass("base");
+
+	// Default man sounds
+	CSTRDUP(c->Sounds.Aargh, "aargh/man");
+	json_t *sounds = json_find_first_label(node, "Sounds");
+	if (sounds != NULL && sounds->child != NULL)
 	{
-		CMALLOC(c->FiringPics, sizeof *c->FiringPics);
-		CPicLoadJSON(
-			c->FiringPics, json_find_first_label(facePics, "Firing")->child);
+		char *tmp = NULL;
+		LoadStr(&tmp, sounds->child, "Aargh");
+		if (tmp != NULL)
+		{
+			c->Sounds.Aargh = tmp;
+		}
+		else
+		{
+			CFREE(tmp);
+		}
 	}
 }
 static void CharacterClassFree(CharacterClass *c);
@@ -155,7 +202,7 @@ void CharacterClassesClear(CArray *classes)
 static void CharacterClassFree(CharacterClass *c)
 {
 	CFREE(c->Name);
-	CFREE(c->FiringPics);
+	CFREE(c->Sounds.Aargh);
 }
 void CharacterClassesTerminate(CharacterClasses *c)
 {

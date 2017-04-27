@@ -28,6 +28,7 @@
 */
 #include "color.h"
 
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -45,6 +46,7 @@ color_t colorGray = { 128, 128, 128, 255 };
 color_t colorYellow = { 255, 255, 128, 255 };
 color_t colorMagenta = { 255, 0, 255, 255 };
 color_t colorCyan = { 0, 255, 255, 255 };
+color_t colorFog = { 96, 96, 96, 255 };
 
 color_t colorMaroon = { 0x84, 0, 0, 255 };
 color_t colorLonestar = { 0x70, 0, 0, 255 };
@@ -189,9 +191,15 @@ color_t ColorTint(color_t c, HSV hsv)
 	return out;
 }
 
-int ColorEquals(color_t a, color_t b)
+bool ColorEquals(const color_t a, const color_t b)
 {
 	return a.r == b.r && a.g == b.g && a.b == b.b;
+}
+bool HSVEquals(const HSV a, const HSV b)
+{
+	const double epsilon = 0.000001;
+	return fabs(a.h - b.h) < epsilon && fabs(a.s - b.s) < epsilon &&
+		fabs(a.v - b.v) < epsilon;
 }
 
 color_t StrColor(const char *s)

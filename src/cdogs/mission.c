@@ -22,7 +22,7 @@
     This file incorporates work covered by the following copyright and
     permission notice:
 
-    Copyright (c) 2013-2016, Cong Xu
+    Copyright (c) 2013-2017, Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -169,7 +169,6 @@ void MissionCopy(Mission *dst, const Mission *src)
 	case MAPTYPE_STATIC:
 		CArrayCopy(&dst->u.Static.Tiles, &src->u.Static.Tiles);
 		CArrayCopy(&dst->u.Static.Items, &src->u.Static.Items);
-		CArrayCopy(&dst->u.Static.Wrecks, &src->u.Static.Wrecks);
 		CArrayCopy(&dst->u.Static.Characters, &src->u.Static.Characters);
 		CArrayCopy(&dst->u.Static.Objectives, &src->u.Static.Objectives);
 		CArrayCopy(&dst->u.Static.Keys, &src->u.Static.Keys);
@@ -202,7 +201,6 @@ void MissionTerminate(Mission *m)
 	case MAPTYPE_STATIC:
 		CArrayTerminate(&m->u.Static.Tiles);
 		CArrayTerminate(&m->u.Static.Items);
-		CArrayTerminate(&m->u.Static.Wrecks);
 		CArrayTerminate(&m->u.Static.Characters);
 		CArrayTerminate(&m->u.Static.Objectives);
 		CArrayTerminate(&m->u.Static.Keys);
@@ -365,7 +363,7 @@ bool MissionCanBegin(void)
 	return GetNumPlayers(PLAYER_ALIVE_OR_DYING, false, false) > 0;
 }
 
-void MissionBegin(struct MissionOptions *m)
+void MissionBegin(struct MissionOptions *m, const NGameBegin gb)
 {
 	m->HasBegun = true;
 	m->state = MISSION_STATE_PLAY;
@@ -380,7 +378,7 @@ void MissionBegin(struct MissionOptions *m)
 		e.u.SetMessage.Ticks = FPS_FRAMELIMIT * 2;
 		GameEventsEnqueue(&gGameEvents, e);
 	}
-	m->time = 0;
+	m->time = gb.MissionTime;
 	m->pickupTime = 0;
 }
 

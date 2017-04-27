@@ -179,11 +179,13 @@ void EventPoll(EventHandlers *handlers, Uint32 ticks)
 					const int scale = ConfigGetInt(&gConfig, "Graphics.ScaleFactor");
 					GraphicsConfigSet(
 						&gGraphicsDevice.cachedConfig,
-						Vec2iNew(e.window.data1 / scale, e.window.data2 / scale),
+						Vec2iScaleDiv(
+							Vec2iNew(e.window.data1, e.window.data2), scale),
 						false,
 						scale,
-						gGraphicsDevice.cachedConfig.ScaleMode);
-					GraphicsInitialize(&gGraphicsDevice, false);
+						gGraphicsDevice.cachedConfig.ScaleMode,
+						gGraphicsDevice.cachedConfig.Brightness);
+					GraphicsInitialize(&gGraphicsDevice);
 				}
 				break;
 			default:
@@ -493,6 +495,7 @@ SDL_Scancode GetKey(EventHandlers *handlers)
 	{
 		EventPoll(handlers, SDL_GetTicks());
 		k = KeyGetPressed(&handlers->keyboard);
+		SDL_Delay(10);
 	} while (k == SDL_SCANCODE_UNKNOWN);
 	return k;
 }
@@ -504,6 +507,7 @@ SDL_Scancode EventWaitKeyOrText(EventHandlers *handlers)
 	{
 		EventPoll(handlers, SDL_GetTicks());
 		k = KeyGetPressed(&handlers->keyboard);
+		SDL_Delay(10);
 	} while (k == SDL_SCANCODE_UNKNOWN && handlers->keyboard.Typed[0] == '\0');
 	return k;
 }

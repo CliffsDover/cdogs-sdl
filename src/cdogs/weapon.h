@@ -22,7 +22,7 @@
     This file incorporates work covered by the following copyright and
     permission notice:
 
-    Copyright (c) 2013-2016, Cong Xu
+    Copyright (c) 2013-2017, Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,7 @@
 
 #include "bullet_class.h"
 #include "defs.h"
+#include "draw/char_sprites.h"
 #include "pic.h"
 #include "pics.h"
 #include "sounds.h"
@@ -79,14 +80,6 @@ typedef enum
 	GUN_COUNT
 } gun_e;
 
-// picture of player holding a gun
-typedef enum
-{
-	GUNPIC_BLASTER,
-	GUNPIC_KNIFE,
-	GUNPIC_COUNT
-} gunpic_e;
-
 // Gun states
 typedef enum
 {
@@ -98,7 +91,7 @@ typedef enum
 
 typedef struct
 {
-	gunpic_e pic;
+	const NamedSprites *Pic;
 	const Pic *Icon;
 	char *name;
 	char *Description;
@@ -146,25 +139,21 @@ typedef struct
 } Weapon;
 
 extern GunClasses gGunDescriptions;
-extern const TOffsetPic cGunPics[GUNPIC_COUNT][DIRECTION_COUNT][GUNSTATE_COUNT];
-extern const OffsetTable cMuzzleOffset[GUNPIC_COUNT];
 
 void WeaponInitialize(GunClasses *g);
 void WeaponLoadJSON(GunClasses *g, CArray *classes, json_t *root);
 void WeaponClassesClear(CArray *classes);
 void WeaponTerminate(GunClasses *g);
+int GunGetNumClasses(const GunClasses *g);
 Weapon WeaponCreate(const GunDescription *gun);
 const GunDescription *StrGunDescription(const char *s);
 GunDescription *IdGunDescription(const int i);
 int GunDescriptionId(const GunDescription *g);
-Vec2i GunGetMuzzleOffset(const GunDescription *desc, const direction_e dir);
-void WeaponUpdate(
-	Weapon *w, const int ticks, const Vec2i fullPos, const direction_e d,
-	const int playerUID);
+GunDescription *IndexGunDescriptionReal(const int i);
+Vec2i GunGetMuzzleOffset(
+	const GunDescription *desc, const CharSprites *cs, const direction_e dir);
+void WeaponUpdate(Weapon *w, const int ticks);
 bool WeaponIsLocked(const Weapon *w);
-void WeaponFire(
-	Weapon *w, const direction_e d, const Vec2i pos,
-	const int flags, const int playerUID, const int uid);
 void WeaponSetState(Weapon *w, const gunstate_e state);
 void GunFire(
 	const GunDescription *g, const Vec2i fullPos, const int z,

@@ -5,11 +5,11 @@
 		"Type": "Static",
 		"Width": 37,
 		"Height": 48,
-		"WallStyle": 0,
-		"FloorStyle": 8,
-		"RoomStyle": 9,
-		"ExitStyle": 0,
-		"KeyStyle": 3,
+		"WallStyle": "steel",
+		"FloorStyle": "biggrid",
+		"RoomStyle": "biggrid",
+		"ExitStyle": "hazard",
+		"KeyStyle": "cube",
 		"DoorStyle": "office",
 		"Objectives": [{
 			"Description": "Collect the blueprints",
@@ -399,11 +399,11 @@
 		"Type": "Classic",
 		"Width": 60,
 		"Height": 60,
-		"WallStyle": 1,
-		"FloorStyle": 2,
-		"RoomStyle": 10,
-		"ExitStyle": 0,
-		"KeyStyle": 2,
+		"WallStyle": "brick",
+		"FloorStyle": "dirt",
+		"RoomStyle": "checker",
+		"ExitStyle": "hazard",
+		"KeyStyle": "plain",
 		"DoorStyle": "alien",
 		"Objectives": [{
 			"Description": "Kill the attackers",
@@ -565,11 +565,11 @@
 		"Type": "Static",
 		"Width": 35,
 		"Height": 33,
-		"WallStyle": 3,
-		"FloorStyle": 3,
-		"RoomStyle": 10,
-		"ExitStyle": 0,
-		"KeyStyle": 0,
+		"WallStyle": "steelwood",
+		"FloorStyle": "flat",
+		"RoomStyle": "checker",
+		"ExitStyle": "hazard",
+		"KeyStyle": "office",
 		"DoorStyle": "office",
 		"Objectives": [{
 			"Description": "Defeat the remaining intruders",
@@ -789,17 +789,17 @@
 		"Type": "Static",
 		"Width": 48,
 		"Height": 48,
-		"WallStyle": 0,
-		"FloorStyle": 1,
-		"RoomStyle": 8,
-		"ExitStyle": 0,
-		"KeyStyle": 0,
-		"DoorStyle": "blast",
+		"WallStyle": "steel",
+		"FloorStyle": "tile",
+		"RoomStyle": "grid",
+		"ExitStyle": "hazard",
+		"KeyStyle": "office",
+		"DoorStyle": "dungeon2",
 		"Objectives": [{
 			"Description": "Subdue the terrorists",
 			"Type": "Kill",
 			"Index": 0,
-			"Count": 16,
+			"Count": 23,
 			"Required": 12,
 			"Flags": 0
 		},
@@ -814,7 +814,7 @@
 		{
 			"Description": "Destroy AI engine copies",
 			"Type": "Destroy",
-			"MapObject": "cabinet_server",
+			"MapObject": "server_blink",
 			"Count": 3,
 			"Required": 3,
 			"Flags": 0
@@ -934,9 +934,9 @@
 		},
 		{
 			"Index": 2,
-			"Positions": [[20,
+			"Positions": [[19,
 			35],
-			[19,
+			[20,
 			35],
 			[21,
 			35]],
@@ -960,12 +960,12 @@
 		"Type": "Static",
 		"Width": 48,
 		"Height": 48,
-		"WallStyle": 0,
-		"FloorStyle": 1,
-		"RoomStyle": 8,
-		"ExitStyle": 0,
-		"KeyStyle": 0,
-		"DoorStyle": "blast",
+		"WallStyle": "steel",
+		"FloorStyle": "tile",
+		"RoomStyle": "grid",
+		"ExitStyle": "hazard",
+		"KeyStyle": "office",
+		"DoorStyle": "dungeon2",
 		"Objectives": [{
 			"Description": "Get rid of that thing!",
 			"Type": "Kill",
@@ -1151,11 +1151,11 @@
 		"Type": "Static",
 		"Width": 39,
 		"Height": 31,
-		"WallStyle": 4,
-		"FloorStyle": 6,
-		"RoomStyle": 1,
-		"ExitStyle": 0,
-		"KeyStyle": 0,
+		"WallStyle": "brick2",
+		"FloorStyle": "stone",
+		"RoomStyle": "tile",
+		"ExitStyle": "hazard",
+		"KeyStyle": "office",
 		"DoorStyle": "office",
 		"Objectives": [{
 			"Description": "Arrest the AI expert",
@@ -1335,11 +1335,11 @@
 		"Type": "Static",
 		"Width": 73,
 		"Height": 75,
-		"WallStyle": 0,
-		"FloorStyle": 4,
-		"RoomStyle": 8,
-		"ExitStyle": 0,
-		"KeyStyle": 0,
+		"WallStyle": "steel",
+		"FloorStyle": "striped",
+		"RoomStyle": "grid",
+		"ExitStyle": "hazard",
+		"KeyStyle": "office",
 		"DoorStyle": "office",
 		"Objectives": [{
 			"Description": "Take out the killer machines",
@@ -1357,22 +1357,30 @@
 		},
 		{
 			"MapObject": "crate2",
-			"Density": 5
-		},
-		{
-			"MapObject": "box3_gray",
-			"Density": 20
-		},
-		{
-			"MapObject": "barrel",
 			"Density": 10
 		},
 		{
-			"MapObject": "barrel_skull",
-			"Density": 15
+			"MapObject": "box3_blink",
+			"Density": 35
 		},
 		{
-			"MapObject": "box3_red",
+			"MapObject": "crate",
+			"Density": 10
+		},
+		{
+			"MapObject": "box2",
+			"Density": 10
+		},
+		{
+			"MapObject": "box",
+			"Density": 10
+		},
+		{
+			"MapObject": "barrel_blue2",
+			"Density": 5
+		},
+		{
+			"MapObject": "barrel_flame",
 			"Density": 5
 		}],
 		"EnemyDensity": 0,

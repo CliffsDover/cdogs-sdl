@@ -22,7 +22,7 @@
     This file incorporates work covered by the following copyright and
     permission notice:
 
-    Copyright (c) 2013-2016, Cong Xu
+    Copyright (c) 2013-2017, Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -52,6 +52,7 @@
 
 #include "config.h"
 #include "objective.h"
+#include "proto/msg.pb.h"
 #include "sys_config.h"
 
 #define ObjectiveFromTileItem(f) ((((f) & TILEITEM_OBJECTIVE) >> OBJECTIVE_SHIFT)-1)
@@ -176,12 +177,11 @@ typedef struct
 		// Static
 		struct
 		{
-			CArray Tiles;	// of unsigned short (map tile)
-			CArray Items;	// of MapObjectPositions
-			CArray Wrecks;	// of MapObjectPositions
+			CArray Tiles;		// of unsigned short (map tile)
+			CArray Items;		// of MapObjectPositions
 			CArray Characters;	// of CharacterPositions
 			CArray Objectives;	// of ObjectivePositions
-			CArray Keys;	// of KeyPositions
+			CArray Keys;		// of KeyPositions
 			Vec2i Start;
 			struct
 			{
@@ -197,6 +197,7 @@ typedef struct
 			int R1;
 			int R2;
 			int CorridorWidth;
+			int Squares;
 		} Cave;
 	} u;
 } Mission;
@@ -240,7 +241,7 @@ void UpdateMissionObjective(
 	const struct MissionOptions *options,
 	const int flags, const ObjectiveType type, const int count);
 bool MissionCanBegin(void);
-void MissionBegin(struct MissionOptions *m);
+void MissionBegin(struct MissionOptions *m, const NGameBegin gb);
 bool CanCompleteMission(const struct MissionOptions *options);
 bool MissionAllObjectivesComplete(const struct MissionOptions *mo);
 bool IsMissionComplete(const struct MissionOptions *options);

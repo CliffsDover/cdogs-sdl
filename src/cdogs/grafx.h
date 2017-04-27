@@ -22,7 +22,7 @@
     This file incorporates work covered by the following copyright and
     permission notice:
 
-    Copyright (c) 2013-2015, Cong Xu
+    Copyright (c) 2013-2016, Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -55,19 +55,23 @@
 #include "c_array.h"
 #include "color.h"
 #include "config.h"
-#include "pic_file.h"
 #include "vector.h"
 #include "sys_specifics.h"
 
+#define RESTART_RESOLUTION 1
+#define RESTART_SCALE_MODE 2
+#define RESTART_BRIGHTNESS 4
+#define RESTART_ALL -1
 typedef struct
 {
 	Vec2i Res;
 	bool Fullscreen;
 	int ScaleFactor;
 	ScaleMode ScaleMode;
+	int Brightness;
 	bool IsEditor;
 
-	bool needRestart;
+	int RestartFlags;
 } GraphicsConfig;
 
 typedef struct
@@ -87,27 +91,26 @@ typedef struct
 	SDL_Renderer *renderer;
 	SDL_Window *window;
 	SDL_PixelFormat *Format;
-	Uint32 Amask;
-	Uint8 Ashift;
 	GraphicsConfig cachedConfig;
 	CArray validModes;	// of Vec2i, w x h
 	int modeIndex;
 	BlitClipping clipping;
 	Uint32 *buf;
-	Uint32 *bkg;
+	SDL_Texture *bkg;
+	SDL_Texture *brightnessOverlay;
 } GraphicsDevice;
 
 extern GraphicsDevice gGraphicsDevice;
 
 void GraphicsInit(GraphicsDevice *device, Config *c);
-void GraphicsInitialize(GraphicsDevice *g, const bool force);
+void GraphicsInitialize(GraphicsDevice *g);
 void GraphicsTerminate(GraphicsDevice *g);
 int GraphicsGetScreenSize(GraphicsConfig *config);
 int GraphicsGetMemSize(GraphicsConfig *config);
 void GraphicsConfigSet(
 	GraphicsConfig *c,
 	const Vec2i res, const bool fullscreen,
-	const int scaleFactor, const ScaleMode scaleMode);
+	const int scaleFactor, const ScaleMode scaleMode, const int brightness);
 void GraphicsConfigSetFromConfig(GraphicsConfig *gc, Config *c);
 
 void Gfx_ModePrev(void);

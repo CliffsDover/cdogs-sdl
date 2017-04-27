@@ -1,7 +1,7 @@
 /*
     C-Dogs SDL
     A port of the legendary (and fun) action/arcade cdogs.
-    Copyright (c) 2014-2016, Cong Xu
+    Copyright (c) 2014-2017, Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -148,9 +148,9 @@ static void HandleGameEvent(
 		{
 			PlayerData *p = PlayerDataGetByUID(e.u.Score.PlayerUID);
 			PlayerScore(p, e.u.Score.Score);
-			HUDAddUpdate(
-				&camera->HUD,
-				NUMBER_UPDATE_SCORE, e.u.Score.PlayerUID, e.u.Score.Score);
+			HUDNumPopupsAdd(
+				&camera->HUD.numPopups,
+				NUMBER_POPUP_SCORE, e.u.Score.PlayerUID, e.u.Score.Score);
 		}
 		break;
 	case GAME_EVENT_SOUND_AT:
@@ -179,7 +179,7 @@ static void HandleGameEvent(
 		gMission.HasBegun = false;
 		break;
 	case GAME_EVENT_GAME_BEGIN:
-		MissionBegin(&gMission);
+		MissionBegin(&gMission, e.u.GameBegin);
 		break;
 	case GAME_EVENT_ACTOR_ADD:
 		ActorAdd(e.u.ActorAdd);
@@ -206,13 +206,12 @@ static void HandleGameEvent(
 		{
 			TActor *a = ActorGetByUID(e.u.ActorSlide.UID);
 			if (!a->isInUse) break;
-			a->Vel = Net2Vec2i(e.u.ActorSlide.Vel);
+			a->tileItem.VelFull = Net2Vec2i(e.u.ActorSlide.Vel);
 			// Slide sound
 			if (ConfigGetBool(&gConfig, "Sound.Footsteps"))
 			{
 				SoundPlayAt(
-					&gSoundDevice,
-					gSoundDevice.slideSound,
+					&gSoundDevice, StrSound("slide"),
 					Vec2iNew(a->tileItem.x, a->tileItem.y));
 			}
 		}
@@ -221,7 +220,8 @@ static void HandleGameEvent(
 		{
 			TActor *a = ActorGetByUID(e.u.ActorImpulse.UID);
 			if (!a->isInUse) break;
-			a->Vel = Vec2iAdd(a->Vel, Net2Vec2i(e.u.ActorImpulse.Vel));
+			a->tileItem.VelFull =
+				Vec2iAdd(a->tileItem.VelFull, Net2Vec2i(e.u.ActorImpulse.Vel));
 			const Vec2i pos = Net2Vec2i(e.u.ActorImpulse.Pos);
 			if (!Vec2iIsZero(pos))
 			{
@@ -249,8 +249,7 @@ static void HandleGameEvent(
 			ActorHeal(a, e.u.Heal.Amount);
 			// Sound of healing
 			SoundPlayAt(
-				&gSoundDevice,
-				gSoundDevice.healthSound, Vec2iFull2Real(a->Pos));
+				&gSoundDevice, StrSound("health"), Vec2iFull2Real(a->Pos));
 			// Tell the spawner that we took a health so we can
 			// spawn more (but only if we're the server)
 			if (e.u.Heal.IsRandomSpawned && !gCampaign.IsClient)
@@ -259,8 +258,8 @@ static void HandleGameEvent(
 			}
 			if (e.u.Heal.PlayerUID >= 0)
 			{
-				HUDAddUpdate(
-					&camera->HUD, NUMBER_UPDATE_HEALTH,
+				HUDNumPopupsAdd(
+					&camera->HUD.numPopups, NUMBER_POPUP_HEALTH,
 					e.u.Heal.PlayerUID, e.u.Heal.Amount);
 			}
 		}
@@ -279,8 +278,8 @@ static void HandleGameEvent(
 			}
 			if (e.u.AddAmmo.PlayerUID >= 0)
 			{
-				HUDAddUpdate(
-					&camera->HUD, NUMBER_UPDATE_AMMO,
+				HUDNumPopupsAdd(
+					&camera->HUD.numPopups, NUMBER_POPUP_AMMO,
 					e.u.AddAmmo.PlayerUID, e.u.AddAmmo.Amount);
 			}
 		}
@@ -292,8 +291,8 @@ static void HandleGameEvent(
 			ActorAddAmmo(a, e.u.UseAmmo.AmmoId, -(int)e.u.UseAmmo.Amount);
 			if (e.u.UseAmmo.PlayerUID >= 0)
 			{
-				HUDAddUpdate(
-					&camera->HUD, NUMBER_UPDATE_AMMO,
+				HUDNumPopupsAdd(
+					&camera->HUD.numPopups, NUMBER_POPUP_AMMO,
 					e.u.UseAmmo.PlayerUID, -(int)e.u.UseAmmo.Amount);
 			}
 		}
@@ -328,7 +327,7 @@ static void HandleGameEvent(
 			if (!a->isInUse) break;
 			const BulletClass *b = StrBulletClass(e.u.Melee.BulletClass);
 			if ((HitType)e.u.Melee.HitType != HIT_NONE &&
-				HasHitSound(b->Power, a->flags, a->PlayerUID,
+				HasHitSound(a->flags, a->PlayerUID,
 				(TileItemKind)e.u.Melee.TargetKind, e.u.Melee.TargetUID,
 				SPECIAL_NONE, false))
 			{
@@ -338,9 +337,10 @@ static void HandleGameEvent(
 			}
 			if (!gCampaign.IsClient)
 			{
+				// TODO: melee hitback (vel)?
 				Damage(
 					Vec2iZero(),
-					b->Power,
+					b->Power, b->Mass,
 					a->flags, a->PlayerUID, a->uid,
 					(TileItemKind)e.u.Melee.TargetKind, e.u.Melee.TargetUID,
 					SPECIAL_NONE);
@@ -366,21 +366,22 @@ static void HandleGameEvent(
 		{
 			TMobileObject *o = MobObjGetByUID(e.u.BulletBounce.UID);
 			if (o == NULL || !o->isInUse) break;
-			const Vec2i pos = Net2Vec2i(e.u.BulletBounce.BouncePos);
+			const Vec2i bouncePos = Net2Vec2i(e.u.BulletBounce.BouncePos);
 			PlayHitSound(
 				&o->bulletClass->HitSound, (HitType)e.u.BulletBounce.HitType,
-				Vec2iFull2Real(pos));
+				Vec2iFull2Real(bouncePos));
 			if (e.u.BulletBounce.Spark && o->bulletClass->Spark != NULL)
 			{
 				GameEvent s = GameEventNew(GAME_EVENT_ADD_PARTICLE);
 				s.u.AddParticle.Class = o->bulletClass->Spark;
-				s.u.AddParticle.FullPos = pos;
+				s.u.AddParticle.FullPos = bouncePos;
 				s.u.AddParticle.Z = o->z;
 				GameEventsEnqueue(&gGameEvents, s);
 			}
+			const Vec2i pos = Net2Vec2i(e.u.BulletBounce.Pos);
 			o->x = pos.x;
 			o->y = pos.y;
-			o->vel = Net2Vec2i(e.u.BulletBounce.BounceVel);
+			o->tileItem.VelFull = Net2Vec2i(e.u.BulletBounce.Vel);
 		}
 		break;
 	case GAME_EVENT_REMOVE_BULLET:
@@ -431,7 +432,7 @@ static void HandleGameEvent(
 			}
 
 			// Add muzzle flash
-			if (GunHasMuzzle(g))
+			if (GunHasMuzzle(g) && g->MuzzleFlash != NULL)
 			{
 				GameEvent ap = GameEventNew(GAME_EVENT_ADD_PARTICLE);
 				ap.u.AddParticle.Class = g->MuzzleFlash;
@@ -457,8 +458,7 @@ static void HandleGameEvent(
 			if (g->Brass && g->ReloadLead == 0)
 			{
 				const direction_e d = RadiansToDirection(e.u.GunFire.Angle);
-				const Vec2i muzzleOffset = GunGetMuzzleOffset(g, d);
-				GunAddBrass(g, d, Vec2iMinus(fullPos, muzzleOffset));
+				GunAddBrass(g, d, fullPos);
 			}
 		}
 		break;
@@ -502,8 +502,8 @@ static void HandleGameEvent(
 					a, e.u.ActorHit.Power, e.u.ActorHit.HitterPlayerUID);
 				if (e.u.ActorHit.PlayerUID >= 0)
 				{
-					HUDAddUpdate(
-						&camera->HUD, NUMBER_UPDATE_HEALTH,
+					HUDNumPopupsAdd(
+						&camera->HUD.numPopups, NUMBER_POPUP_HEALTH,
 						e.u.ActorHit.PlayerUID, -e.u.ActorHit.Power);
 				}
 
@@ -576,17 +576,17 @@ static void HandleGameEvent(
 			// Display a text update effect for the objective
 			if (camera != NULL)
 			{
-				HUDAddUpdate(
-					&camera->HUD, NUMBER_UPDATE_OBJECTIVE,
-					e.u.ObjectiveUpdate.ObjectiveId, e.u.ObjectiveUpdate.Count);
+				HUDNumPopupsAdd(
+					&camera->HUD.numPopups, NUMBER_POPUP_OBJECTIVE,
+					e.u.ObjectiveUpdate.ObjectiveId,
+					e.u.ObjectiveUpdate.Count);
 			}
 			MissionSetMessageIfComplete(&gMission);
 		}
 		break;
 	case GAME_EVENT_ADD_KEYS:
 		gMission.KeyFlags |= e.u.AddKeys.KeyFlags;
-		SoundPlayAt(
-			&gSoundDevice, gSoundDevice.keySound, Net2Vec2i(e.u.AddKeys.Pos));
+		SoundPlayAt(&gSoundDevice, StrSound("key"), Net2Vec2i(e.u.AddKeys.Pos));
 		// Clear cache since we may now have new paths
 		PathCacheClear(&gPathCache);
 		break;

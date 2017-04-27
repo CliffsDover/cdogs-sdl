@@ -29,8 +29,8 @@
 
 #include "actors.h"
 #include "ai.h"
-#include "draw.h"
-#include "drawtools.h"
+#include "draw/draw.h"
+#include "draw/drawtools.h"
 #include "game_events.h"
 #include "handle_game_events.h"
 #include "objs.h"
@@ -42,13 +42,11 @@ void GrafxMakeRandomBackground(
 	GraphicsDevice *device,
 	CampaignOptions *co, struct MissionOptions *mo, Map *map)
 {
-	HSV tint;
 	CampaignSettingInit(&co->Setting);
 	SetupQuickPlayCampaign(&co->Setting);
-	co->seed = rand();
-	tint.h = rand() * 360.0 / RAND_MAX;
-	tint.s = rand() * 1.0 / RAND_MAX;
-	tint.v = 0.5;
+	const HSV tint = {
+		rand() * 360.0 / RAND_MAX, rand() * 1.0 / RAND_MAX, 0.5
+	};
 	DrawBuffer buffer;
 	DrawBufferInit(&buffer, Vec2iNew(X_TILES, Y_TILES), device);
 	co->MissionIndex = 0;
@@ -57,27 +55,42 @@ void GrafxMakeRandomBackground(
 	DrawBufferTerminate(&buffer);
 	MissionOptionsTerminate(mo);
 	CampaignSettingTerminate(&co->Setting);
-	co->seed = ConfigGetInt(&gConfig, "Game.RandomSeed");
 }
 
 void GrafxDrawBackground(
 	GraphicsDevice *g, DrawBuffer *buffer,
 	HSV tint, Vec2i pos, GrafxDrawExtra *extra)
 {
-	Vec2i v;
-
 	DrawBufferSetFromMap(buffer, &gMap, pos, X_TILES);
 	DrawBufferDraw(buffer, Vec2iZero(), extra);
 
-	for (v.y = 0; v.y < g->cachedConfig.Res.y; v.y++)
+	if (!HSVEquals(tint, tintNone))
 	{
-		for (v.x = 0; v.x < g->cachedConfig.Res.x; v.x++)
+		Vec2i v;
+		for (v.y = 0; v.y < g->cachedConfig.Res.y; v.y++)
 		{
-			DrawPointTint(g, v, tint);
+			for (v.x = 0; v.x < g->cachedConfig.Res.x; v.x++)
+			{
+				DrawPointTint(g, v, tint);
+			}
 		}
 	}
-	memcpy(g->bkg, g->buf, GraphicsGetMemSize(&g->cachedConfig));
+	SDL_UpdateTexture(
+		g->bkg, NULL, g->buf, g->cachedConfig.Res.x * sizeof(Uint32));
+	GraphicsClear(g);
 	memset(g->buf, 0, GraphicsGetMemSize(&g->cachedConfig));
+}
+
+void GrafxRedrawBackground(GraphicsDevice *g, const Vec2i pos)
+{
+	memset(g->buf, 0, GraphicsGetMemSize(&g->cachedConfig));
+	DrawBuffer buffer;
+	DrawBufferInit(&buffer, Vec2iNew(X_TILES, Y_TILES), g);
+	const HSV tint = {
+		rand() * 360.0 / RAND_MAX, rand() * 1.0 / RAND_MAX, 0.5
+	};
+	GrafxDrawBackground(g, &buffer, tint, pos, NULL);
+	DrawBufferTerminate(&buffer);
 }
 
 void GrafxMakeBackground(
@@ -106,7 +119,7 @@ void GrafxMakeBackground(
 	GameEventsTerminate(&gGameEvents);
 }
 
-void GraphicsBlitBkg(GraphicsDevice *device)
+void GraphicsClear(GraphicsDevice *device)
 {
-	memcpy(device->buf, device->bkg, GraphicsGetMemSize(&device->cachedConfig));
+	memset(device->buf, 0, GraphicsGetMemSize(&device->cachedConfig));
 }

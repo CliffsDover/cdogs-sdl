@@ -22,7 +22,7 @@
     This file incorporates work covered by the following copyright and
     permission notice:
 
-    Copyright (c) 2013-2016, Cong Xu
+    Copyright (c) 2013-2017 Cong Xu
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -58,6 +58,7 @@
 
 #define TILE_WIDTH      16
 #define TILE_HEIGHT     12
+#define TILE_SIZE		Vec2iNew(TILE_WIDTH, TILE_HEIGHT)
 
 #define X_TILES			((gGraphicsDevice.cachedConfig.Res.x + TILE_WIDTH - 1) / TILE_WIDTH + 1)
 
@@ -75,11 +76,10 @@ typedef enum
 	MAPTILE_IS_WALL			= 0x0008,
 	MAPTILE_IS_NOTHING		= 0x0010,
 	MAPTILE_IS_NORMAL_FLOOR	= 0x0020,
-	MAPTILE_IS_DRAINAGE		= 0x0040,
-	MAPTILE_OFFSET_PIC		= 0x0080,
+	MAPTILE_OFFSET_PIC		= 0x0040,
 // These constants are used internally in draw, it is never set in the map
-	MAPTILE_DELAY_DRAW		= 0x0100,
-	MAPTILE_OUT_OF_SIGHT	= 0x0200
+	MAPTILE_DELAY_DRAW		= 0x0080,
+	MAPTILE_OUT_OF_SIGHT	= 0x0100
 } MapTileFlags;
 
 typedef enum
@@ -94,7 +94,7 @@ typedef enum
 #define TILEITEM_IMPASSABLE     1
 #define TILEITEM_CAN_BE_SHOT    2
 #define TILEITEM_OBJECTIVE      (8 + 16 + 32 + 64 + 128)
-#define TILEITEM_IS_WRECK		256
+#define TILEITEM_DRAW_LAST		256
 #define OBJECTIVE_SHIFT         3
 
 
@@ -117,6 +117,8 @@ typedef void (*TileItemDrawFunc)(const Vec2i, const TileItemDrawFuncData *);
 typedef struct TileItem
 {
 	int x, y;
+	// Velocity in full coordinates
+	Vec2i VelFull;
 	Vec2i size;
 	TileItemKind kind;
 	int id;	// Id of item (actor, mobobj or obj)
@@ -155,12 +157,12 @@ void TileDestroy(Tile *t);
 bool IsTileItemInsideTile(TTileItem *i, Vec2i tilePos);
 bool TileCanSee(Tile *t);
 bool TileCanWalk(const Tile *t);
-bool TileIsNormalFloor(Tile *t);
-bool TileIsClear(Tile *t);
+bool TileIsNormalFloor(const Tile *t);
+bool TileIsClear(const Tile *t);
 bool TileHasCharacter(Tile *t);
 void TileSetAlternateFloor(Tile *t, NamedPic *p);
 
 void TileItemUpdate(TTileItem *t, const int ticks);
 
-TTileItem *ThingIdGetTileItem(ThingId *tid);
-bool TileItemIsDebris(const TTileItem *t);
+TTileItem *ThingIdGetTileItem(const ThingId *tid);
+bool TileItemDrawLast(const TTileItem *t);
